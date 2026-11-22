@@ -11,6 +11,7 @@ It is being rebuilt from an earlier infrastructure tycoon; [docs/ROADMAP.md](doc
 | --- | --- |
 | Gameplay rules | [docs/GAMEPLAY.md](docs/GAMEPLAY.md) |
 | Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Visual language and UI review | [docs/UI_DESIGN.md](docs/UI_DESIGN.md) |
 | Tests and CI | [docs/testing.md](docs/testing.md) |
 | Hosting, itch.io, CI/CD and the database | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 | Status and plan | [docs/ROADMAP.md](docs/ROADMAP.md) |

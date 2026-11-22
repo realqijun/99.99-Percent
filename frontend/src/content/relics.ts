@@ -51,7 +51,7 @@ const LIST: RelicDef[] = [
   },
   {
     id: "loadTester", name: "Load Tester", rarity: "common", pool: "neutral", icon: "bolt",
-    text: "Every 10th attack you play also Serves a random enemy for 10.",
+    text: "Every 10th Serve card you play also Serves a random enemy for 10.",
     flavor: "Point it at prod. What could go wrong?",
     trigger: "attackPlayed", every: 10, effects: [{ op: "serve", amount: 10, target: "randomEnemy" }],
   },
@@ -126,7 +126,7 @@ const LIST: RelicDef[] = [
   },
   {
     id: "architectureDiagram", name: "Architecture Diagram", rarity: "uncommon", pool: "neutral", icon: "network",
-    text: "Whenever you play a power, gain 3 Capacity.",
+    text: "Whenever you play an Infrastructure card, gain 3 Capacity.",
     flavor: "Boxes, arrows and one cloud labelled magic.",
     trigger: "powerPlayed", effects: [{ op: "capacity", amount: 3 }],
   },
@@ -158,7 +158,7 @@ const LIST: RelicDef[] = [
   },
   {
     id: "goldenSignals", name: "Golden Signals", rarity: "rare", pool: "neutral", icon: "bolt",
-    text: "Every 3rd attack you play gives 1 Engineer.",
+    text: "Every 3rd Serve card you play gives 1 Engineer.",
     flavor: "Latency, traffic, errors, saturation.",
     trigger: "attackPlayed", every: 3, effects: [{ op: "engineers", amount: 1 }],
   },
