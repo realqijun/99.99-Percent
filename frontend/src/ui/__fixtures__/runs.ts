@@ -111,7 +111,7 @@ export const FIXTURES: Record<string, { run: RunState }> = {
       "a1LaunchDay",
       (c, r) => {
         typical(c, r);
-        const spike = { ...c.enemies[0], id: "trafficSpike", load: 13, maxLoad: 13, history: [], phase: undefined };
+        const spike = { ...c.enemies[0], id: "trafficSpike", load: 13, maxLoad: 13, history: [], upcoming: [], phase: undefined };
         for (let i = 0; i < 4; i++) c.enemies.push(structuredClone({ ...spike, key: c.nextEnemyKey++, intent: { move: "surge", kinds: ["attack"], hit: { amount: 6, times: 1 } } }));
       },
       { position: "boss" },

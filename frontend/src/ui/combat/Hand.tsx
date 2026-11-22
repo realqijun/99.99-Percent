@@ -10,6 +10,8 @@ import { Tip } from "../Tip";
 
 export const HAND_WIDTH = 800;
 const CARD_W = 160;
+/** Room each side for the outer cards' tilt, so a full hand stays clear of the piles. */
+const TILT_ROOM = 40;
 const DRAG_PLAY = 110;
 
 interface Drag {
@@ -48,7 +50,7 @@ export function Hand({
   // A drag ends with a click event; this stops that click from also picking the card.
   const dragged = useRef(false);
   const n = combat.hand.length;
-  const spacing = n > 1 ? Math.min(CARD_W - 8, (HAND_WIDTH - CARD_W) / (n - 1)) : 0;
+  const spacing = n > 1 ? Math.min(CARD_W - 8, (HAND_WIDTH - CARD_W - 2 * TILT_ROOM) / (n - 1)) : 0;
 
   useLayoutEffect(() => {
     const root = ref.current?.closest(".combat");

@@ -4,6 +4,9 @@ import { Icon } from "./art";
 import { baseCost, cardName, type Cost } from "./cards";
 import { CARD_TYPES } from "./labels";
 
+/** Past this many characters the art band shrinks so the rules text fits. */
+const LONG_TEXT = 64;
+
 export function CardView({
   def,
   upgraded,
@@ -21,7 +24,7 @@ export function CardView({
   const printed = baseCost(def, upgraded);
   const delta = typeof cost === "number" && typeof printed === "number" ? cost - printed : 0;
   return (
-    <div className={`card card--${def.type}${upgraded ? " card--upgraded" : ""}${small ? " card--small" : ""}`} aria-hidden="true">
+    <div className={`card card--${def.type}${upgraded ? " card--upgraded" : ""}${small ? " card--small" : ""}${text.length > LONG_TEXT ? " card--long" : ""}`} aria-hidden="true">
       <div className="card__head">
         <span className={`card__cost${delta < 0 ? " is-cheaper" : delta > 0 ? " is-dearer" : ""}`}>{cost === null ? "-" : cost === "x" ? "X" : cost}</span>
         <span className="card__name">{cardName(def, upgraded)}</span>
