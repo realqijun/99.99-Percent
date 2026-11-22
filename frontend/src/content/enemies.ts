@@ -83,7 +83,7 @@ const LIST: Def[] = [
     description: "Writes everything down and clogs your deck with Tech Debt.",
   },
   {
-    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [70, 76],
+    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [74, 80],
     moves: {
       stampede: { name: "Stampede", effects: [hit(4, 4)] },
       regroup: { name: "Regroup", effects: [onSelf("scaling", 2), buffer(12)] },
@@ -93,7 +93,7 @@ const LIST: Def[] = [
     description: "Every client retries at once. Its many hits grow after each Regroup.",
   },
   {
-    id: "lockContention", name: "Lock Contention", tier: "elite", load: [84, 92],
+    id: "lockContention", name: "Lock Contention", tier: "elite", load: [90, 98],
     moves: {
       acquireLock: { name: "Acquire Lock", effects: [buffer(12), hit(8)] },
       waitQueue: { name: "Wait Queue", effects: [hit(7), onPlayer("backlog", 3)] },
@@ -149,8 +149,8 @@ const LIST: Def[] = [
   {
     id: "noisyNeighbor", name: "Noisy Neighbor", tier: "normal", load: [60, 68],
     moves: {
-      stealCpu: { name: "Steal CPU", effects: [hit(10), onPlayer("degraded", 1)] },
-      thrashDisk: { name: "Thrash Disk", effects: [hit(18)] },
+      stealCpu: { name: "Steal CPU", effects: [hit(9), onPlayer("degraded", 1)] },
+      thrashDisk: { name: "Thrash Disk", effects: [hit(16)] },
       hogResources: { name: "Hog Resources", effects: [buffer(10), onAllies("scaling", 1)] },
     },
     ai: { kind: "weighted", weights: { stealCpu: 2, thrashDisk: 2, hogResources: 1 }, maxRepeat: 1 },
@@ -170,7 +170,7 @@ const LIST: Def[] = [
     id: "hotPartition", name: "Hot Partition", tier: "normal", load: [70, 80],
     moves: {
       hotShard: { name: "Hot Shard", effects: [hit(9), onSelf("scaling", 2)] },
-      skewedKey: { name: "Skewed Key", effects: [hit(21)] },
+      skewedKey: { name: "Skewed Key", effects: [hit(19)] },
       rebalance: { name: "Rebalance", effects: [buffer(18)] },
     },
     ai: { kind: "cycle", moves: ["hotShard", "skewedKey", "rebalance"] },
@@ -187,7 +187,7 @@ const LIST: Def[] = [
     description: "Passes on retry, fails in prod. Causes Node Failures.",
   },
   {
-    id: "ddosBotnet", name: "DDoS Botnet", tier: "elite", load: [112, 120],
+    id: "ddosBotnet", name: "DDoS Botnet", tier: "elite", load: [100, 108],
     moves: {
       amplify: { name: "Amplify", effects: [hit(8), onSelf("scaling", 2)] },
       packetFlood: { name: "Packet Flood", effects: [hit(2, 6)] },
@@ -208,11 +208,11 @@ const LIST: Def[] = [
     description: "One half of a cluster with two leaders. The other half is never far.",
   },
   {
-    id: "blackFriday", name: "Black Friday", tier: "boss", load: [205, 215],
+    id: "blackFriday", name: "Black Friday", tier: "boss", load: [190, 200],
     moves: {
       doorbusters: { name: "Doorbusters", effects: [summon("shopperWave", 1)] },
       checkoutRush: { name: "Checkout Rush", effects: [hit(7, 3)] },
-      flashSale: { name: "Flash Sale", effects: [hit(26)] },
+      flashSale: { name: "Flash Sale", effects: [hit(24)] },
       inventoryLock: { name: "Inventory Lock", effects: [buffer(25), addCard("pager", "draw", 2)] },
     },
     ai: {
@@ -243,7 +243,7 @@ const LIST: Def[] = [
     moves: {
       spread: { name: "Spread", effects: [hit(8), onPlayer("degraded", 2)] },
       domino: { name: "Domino", effects: [hit(7, 2), onSelf("scaling", 2)] },
-      collapse: { name: "Collapse", effects: [hit(24)] },
+      collapse: { name: "Collapse", effects: [hit(21)] },
     },
     ai: { kind: "cycle", moves: ["spread", "domino", "collapse"] },
     description: "One failure knocks over the next. Degrades you and keeps Scaling.",
@@ -253,7 +253,7 @@ const LIST: Def[] = [
     moves: {
       renewalReminder: { name: "Renewal Reminder", effects: [buffer(18)] },
       finalWarning: { name: "Final Warning", effects: [buffer(18), onSelf("scaling", 4)] },
-      expired: { name: "Expired", effects: [hit(28)] },
+      expired: { name: "Expired", effects: [hit(25)] },
       handshakeFailures: { name: "Handshake Failures", effects: [hit(6, 3)] },
     },
     ai: {
@@ -266,7 +266,7 @@ const LIST: Def[] = [
   {
     id: "dnsOutage", name: "DNS Outage", tier: "normal", load: [80, 90],
     moves: {
-      nxdomain: { name: "NXDOMAIN", effects: [hit(18)] },
+      nxdomain: { name: "NXDOMAIN", effects: [hit(16)] },
       resolverDown: { name: "Resolver Down", effects: [hit(10), addCard("pager", "draw", 2)] },
       slowPropagation: { name: "Slow Propagation", effects: [hit(6, 3), onPlayer("latency", 1)] },
     },
@@ -277,7 +277,7 @@ const LIST: Def[] = [
     id: "clockSkew", name: "Clock Skew", tier: "normal", load: [70, 78],
     moves: {
       desync: { name: "Desync", effects: [hit(6), onPlayer("latency", 2), onPlayer("degraded", 2)] },
-      futureTimestamp: { name: "Future Timestamp", effects: [hit(22)] },
+      futureTimestamp: { name: "Future Timestamp", effects: [hit(20)] },
       outOfOrder: { name: "Out of Order", effects: [hit(7, 3)] },
       leapSecond: { name: "Leap Second", effects: [hit(10), buffer(14)] },
     },
@@ -288,8 +288,8 @@ const LIST: Def[] = [
     id: "zombieProcess", name: "Zombie Process", tier: "normal", load: [56, 64],
     moves: {
       holdHandles: { name: "Hold File Handles", effects: [hit(9), onPlayer("backlog", 2)] },
-      gnaw: { name: "Gnaw", effects: [hit(17)] },
-      respawn: { name: "Respawn", effects: [heal(20), buffer(8)] },
+      gnaw: { name: "Gnaw", effects: [hit(15)] },
+      respawn: { name: "Respawn", effects: [heal(15), buffer(8)] },
     },
     ai: { kind: "cycle", moves: ["holdHandles", "gnaw", "respawn"] },
     description: "Killed long ago and still running. Heals itself every third turn.",
@@ -298,24 +298,24 @@ const LIST: Def[] = [
     id: "configGhost", name: "Config Ghost", tier: "normal", load: [64, 72],
     moves: {
       haunt: { name: "Haunt", effects: [hit(8), addCard("configDrift", "draw", 2)] },
-      phantomOverride: { name: "Phantom Override", effects: [hit(16), onPlayer("degraded", 1)] },
+      phantomOverride: { name: "Phantom Override", effects: [hit(14), onPlayer("degraded", 1)] },
       fadeAway: { name: "Fade Away", effects: [buffer(24)] },
     },
     ai: { kind: "weighted", weights: { haunt: 2, phantomOverride: 3, fadeAway: 1 }, maxRepeat: 1 },
     description: "A setting nobody remembers changing. Slips Config Drift into your deck.",
   },
   {
-    id: "dataCorruption", name: "Data Corruption", tier: "elite", load: [150, 160],
+    id: "dataCorruption", name: "Data Corruption", tier: "elite", load: [135, 145],
     moves: {
       silentCorruption: { name: "Silent Corruption", effects: [onPlayer("backlog", 5), onPlayer("latency", 2)] },
-      bitRot: { name: "Bit Rot", effects: [hit(9, 2), addCard("techDebt", "draw", 1)] },
+      bitRot: { name: "Bit Rot", effects: [hit(8, 2), addCard("techDebt", "draw", 1)] },
       checksumFailure: { name: "Checksum Failure", effects: [hit(27)] },
     },
     ai: { kind: "cycle", moves: ["silentCorruption", "bitRot", "checksumFailure"] },
     description: "Quietly wrong for weeks. Stacks Backlog, Latency and Tech Debt.",
   },
   {
-    id: "legacyMonolith", name: "Legacy Monolith", tier: "elite", load: [200, 215],
+    id: "legacyMonolith", name: "Legacy Monolith", tier: "elite", load: [180, 190],
     moves: {
       bigBallOfMud: { name: "Big Ball of Mud", effects: [buffer(40), addCard("techDebt", "discard", 2)] },
       tightCoupling: { name: "Tight Coupling", effects: [hit(12), onSelf("scaling", 3)] },
@@ -325,12 +325,12 @@ const LIST: Def[] = [
     description: "Twenty years of code in one process. Huge Buffer, endless Tech Debt.",
   },
   {
-    id: "regionOutage", name: "Region Outage", tier: "boss", load: [290, 300],
+    id: "regionOutage", name: "Region Outage", tier: "boss", load: [250, 260],
     moves: {
       zoneDown: { name: "Zone Down", effects: [nodeFailure, summon("failingZone", 1)] },
       brownout: { name: "Brownout", effects: [hit(8, 3)] },
-      failoverStorm: { name: "Failover Storm", effects: [nodeFailure, nodeFailure, hit(14)] },
-      totalBlackout: { name: "Total Blackout", effects: [hit(34)] },
+      failoverStorm: { name: "Failover Storm", effects: [nodeFailure, nodeFailure, hit(12)] },
+      totalBlackout: { name: "Total Blackout", effects: [hit(30)] },
     },
     ai: {
       kind: "phases",
