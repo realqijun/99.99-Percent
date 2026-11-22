@@ -1,25 +1,77 @@
 :root {
   color-scheme: dark;
+  --bg: #1d1834;
+  --bg-deep: #120f24;
+  --panel: #2a2350;
+  --panel-2: #352d63;
+  --line: #0c0a1a;
+  --edge: #4d4489;
+  --text: #f4f1ff;
+  --muted: #bdb5e0;
+  --gold: #ffd84a;
+  --gold-dark: #b38a12;
+  --red: #ff6b6b;
+  --green: #7ee08a;
+  --teal: #4ad9c8;
+  --blue: #6aa8ff;
+  --focus: #7fe3ff;
+  --attack: #ff7a59;
+  --skill: #4ab3ff;
+  --power: #c792ff;
+  --status: #8f8aa8;
+  --pixel: 'Pixelify Sans', monospace;
+  /* Pixelify's small digits are hard to tell apart, so numbers use the body font. */
+  --num: 'Source Sans 3', system-ui, sans-serif;
+  --speed: 1;
   font-family: 'Source Sans 3', system-ui, sans-serif;
-  background: #1d1834;
-  color: #f4f1ff;
+  font-size: 16px;
+  line-height: 1.35;
+  background: #08070f;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background: #08070f;
+  overflow: hidden;
 }
 
-.title {
-  display: grid;
-  place-content: center;
-  min-height: 100vh;
-  text-align: center;
-}
-
-.title h1 {
+h1,
+h2,
+h3 {
+  font-family: var(--pixel);
+  /* Only the regular weight is bundled: its letters stay distinct at small sizes, unlike the bold. */
+  font-weight: 400;
   margin: 0;
-  font-family: 'Pixelify Sans', monospace;
-  font-size: 64px;
-  color: #ffd84a;
+  letter-spacing: 0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
