@@ -46,7 +46,7 @@ const LIST: Def[] = [
   {
     id: "slowQuery", name: "Slow Query", tier: "normal", load: [34, 38],
     moves: {
-      fullTableScan: { name: "Full Table Scan", effects: [hit(8), onPlayer("latency", 2)] },
+      fullTableScan: { name: "Full Table Scan", effects: [hit(9), onPlayer("latency", 2)] },
       nPlusOne: { name: "N+1 Queries", effects: [hit(4, 4)] },
       lockWait: { name: "Lock Wait", effects: [hit(14)] },
     },
@@ -76,18 +76,18 @@ const LIST: Def[] = [
     id: "logFlood", name: "Log Flood", tier: "normal", load: [32, 38],
     moves: {
       verbose: { name: "Verbose Logging", effects: [hit(7), addCard("techDebt", "discard", 1)] },
-      stackTrace: { name: "Stack Trace", effects: [hit(13)] },
+      stackTrace: { name: "Stack Trace", effects: [hit(14)] },
       debugMode: { name: "Debug Mode", effects: [hit(5), addCard("techDebt", "draw", 2)] },
     },
     ai: { kind: "weighted", weights: { verbose: 3, stackTrace: 2, debugMode: 1 }, maxRepeat: 1 },
     description: "Writes everything down and clogs your deck with Tech Debt.",
   },
   {
-    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [74, 80],
+    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [78, 84],
     moves: {
       stampede: { name: "Stampede", effects: [hit(4, 4)] },
-      regroup: { name: "Regroup", effects: [onSelf("scaling", 2), buffer(12)] },
-      wakeAll: { name: "Wake Everyone", effects: [hit(14), onPlayer("degraded", 1)] },
+      regroup: { name: "Regroup", effects: [onSelf("scaling", 1), buffer(12)] },
+      wakeAll: { name: "Wake Everyone", effects: [hit(17), onPlayer("degraded", 1)] },
     },
     ai: { kind: "script", opening: ["stampede"], then: { kind: "cycle", moves: ["regroup", "stampede", "wakeAll"] } },
     description: "Every client retries at once. Its many hits grow after each Regroup.",
@@ -97,7 +97,7 @@ const LIST: Def[] = [
     moves: {
       acquireLock: { name: "Acquire Lock", effects: [buffer(12), hit(8)] },
       waitQueue: { name: "Wait Queue", effects: [hit(7), onPlayer("backlog", 3)] },
-      deadlock: { name: "Deadlock", effects: [hit(20)] },
+      deadlock: { name: "Deadlock", effects: [hit(23)] },
     },
     ai: { kind: "cycle", moves: ["acquireLock", "waitQueue", "deadlock"] },
     description: "Holds a Buffer, queues Backlog, then deadlocks for a big hit.",

@@ -66,8 +66,8 @@ const STARTERS: Def[] = [
   },
   {
     id: "triage", name: "Triage", pool: "taylor", rarity: "starter", type: "skill",
-    cost: 0, effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(5)],
-    upgrade: { effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(8)] },
+    cost: 0, effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(4)],
+    upgrade: { effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(7)] },
     flavor: "Stop the bleeding, then file the ticket.",
   },
 ];
@@ -106,7 +106,7 @@ const JORDAN: Def[] = [
   },
   {
     id: "cdn", name: "CDN", pool: "jordan", rarity: "common", type: "power",
-    cost: 1, effects: [infra("cdn"), capacity(3)], upgrade: { effects: [infra("cdn"), capacity(6)] },
+    cost: 1, effects: [infra("cdn"), capacity(4)], upgrade: { effects: [infra("cdn"), capacity(7)] },
     flavor: "Closer to the user, further from the bill.",
   },
   {
@@ -137,13 +137,13 @@ const JORDAN: Def[] = [
   },
   {
     id: "rollingRestart", name: "Rolling Restart", pool: "jordan", rarity: "common", type: "skill",
-    cost: 1, effects: [{ op: "repair" }, capacity(5)], upgrade: { effects: [{ op: "repair" }, capacity(8)] },
+    cost: 1, effects: [{ op: "repair" }, capacity(6)], upgrade: { effects: [{ op: "repair" }, capacity(9)] },
     flavor: "Have you tried turning it off and on again?",
   },
   {
     id: "warmPool", name: "Warm Pool", pool: "jordan", rarity: "common", type: "skill",
-    cost: 1, effects: [capacity(6), { op: "if", cond: { kind: "hasInfra", infra: "autoscaler" }, then: [draw(1)] }],
-    upgrade: { effects: [capacity(9), { op: "if", cond: { kind: "hasInfra", infra: "autoscaler" }, then: [draw(1)] }] },
+    cost: 1, effects: [capacity(7), { op: "if", cond: { kind: "hasInfra", infra: "autoscaler" }, then: [draw(1)] }],
+    upgrade: { effects: [capacity(10), { op: "if", cond: { kind: "hasInfra", infra: "autoscaler" }, then: [draw(1)] }] },
     flavor: "Idle instances, ready to sprint.",
   },
   {
@@ -313,7 +313,7 @@ const TAYLOR: Def[] = [
   },
   {
     id: "killSwitch", name: "Kill Switch", pool: "taylor", rarity: "common", type: "attack",
-    cost: 1, effects: [serve(8), onEnemy("throttled", 1)], upgrade: { effects: [serve(11), onEnemy("throttled", 1)] },
+    cost: 1, effects: [serve(7), onEnemy("throttled", 1)], upgrade: { effects: [serve(10), onEnemy("throttled", 1)] },
     flavor: "Big red button. Labelled, for once.",
   },
   {
