@@ -186,12 +186,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
         </div>
       </div>
 
-      {combat.phase !== "player" && (
-        <div className={`combat__banner combat__banner--${combat.phase}`} role="status">
-          {combat.phase === "won" ? "Incident resolved" : "SLA breached"}
-        </div>
-      )}
-      <FxLayer items={fx} />
+      <FxLayer items={fx} combat={combat} />
       {combat.tutorial !== null && !combat.pending && <Tutorial step={combat.tutorial} handSize={combat.hand.length} />}
       {combat.pending && <ChoiceDialog key={JSON.stringify(combat.pending.source)} run={run} combat={combat} pending={combat.pending} />}
       {shown && (

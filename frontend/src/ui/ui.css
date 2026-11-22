@@ -721,6 +721,11 @@ kbd {
   scrollbar-width: none;
 }
 
+/* The relic row scrolls, which would clip an outside ring. */
+.relic:focus-visible {
+  outline-offset: -3px;
+}
+
 .relic {
   position: relative;
   display: grid;
@@ -1954,27 +1959,6 @@ kbd {
     opacity: 0;
     translate: -260px 60px;
   }
-}
-
-.combat__banner {
-  position: absolute;
-  top: 160px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 14px 36px;
-  font-family: var(--pixel);
-  font-weight: 400;
-  font-size: 40px;
-  background: var(--bg-deep);
-  border: 3px solid var(--line);
-  box-shadow: 0 0 0 3px var(--gold);
-  color: var(--gold);
-  z-index: 70;
-}
-
-.combat__banner--lost {
-  box-shadow: 0 0 0 3px var(--red);
-  color: var(--red);
 }
 
 /* animation layer */
