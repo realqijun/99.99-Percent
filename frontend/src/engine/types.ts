@@ -478,6 +478,8 @@ export type Command =
   | { type: "advanceTutorial" }
   /** Leave the current reward, shop, retro, event or treasure screen for the map. */
   | { type: "leave" }
+  /** Back out of a Refactor or a card removal before picking a card: the Retro is open again, the removal refunded. */
+  | { type: "cancel" }
   | { type: "abandon" };
 
 /** What happened, in order, for animation and sound. The state is already final. */

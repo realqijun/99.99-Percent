@@ -6,7 +6,7 @@ import { CONTENT } from "../content";
 import { cantPlayReason, cardCost } from "./combat";
 import { choiceCandidates } from "./effects";
 import { reachableNodes as reachable } from "./map";
-import { applyRunCommand, createRun, eventChoiceBlocked, retroRecoverAmount as retroAmount, RUN_VERSION } from "./run";
+import { applyRunCommand, createRun, deckChoiceCancellable, eventChoiceBlocked, retroRecoverAmount as retroAmount, RUN_VERSION } from "./run";
 import { describeCard } from "./text";
 import type { CardDef, CardInstance, CombatState, CommandResult, Command, Content, NewRunOptions, RunState } from "./types";
 import { checkRun } from "./validate";
@@ -51,6 +51,11 @@ export function choiceCards(run: RunState, content: Content = CONTENT): CardInst
   const c = run.screen.combat;
   const { from, action, source } = c.pending!;
   return choiceCandidates({ run, c, content, events: [] }, from, action, source.kind === "card" ? source.uid : null);
+}
+
+/** Whether the deck choice on screen can be backed out of with `cancel` (a Refactor or a card removal). */
+export function canCancelDeckChoice(run: RunState): boolean {
+  return deckChoiceCancellable(run);
 }
 
 /** Why an event choice can't be made now (not enough cash or Error Budget), or null if it can. */

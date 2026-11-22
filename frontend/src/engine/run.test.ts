@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, cantChoose, newRun, reachableNodes, retroRecoverAmount } from "./index";
+import { applyCommand, canCancelDeckChoice, cantChoose, newRun, reachableNodes, retroRecoverAmount } from "./index";
 import { BOSS_NODE, FLOORS } from "./map";
 import { cardChoices, combatRewards, makeShop } from "./rewards";
 import { rand } from "./rng";
@@ -281,6 +281,22 @@ describe("vendor", () => {
     expect(apply(run, { type: "leave" }).run.screen).toEqual({ kind: "map" });
   });
 
+  it("backs out of a removal before a card is picked, with the price refunded", () => {
+    const run = shopRun();
+    run.cash = 200;
+    const choosing = apply(run, { type: "buyRemoval" }).run;
+    expect(canCancelDeckChoice(choosing)).toBe(true);
+    const back = apply(choosing, { type: "cancel" }).run;
+    expect(back.cash).toBe(200);
+    expect(back.removals).toBe(0);
+    expect(back.stats.cashEarned).toBe(run.stats.cashEarned);
+    expect(back.deck).toEqual(run.deck);
+    expect(back.screen).toEqual(run.screen);
+    // The removal can still be bought this visit, at the same price.
+    expect(apply(back, { type: "buyRemoval" }).run.cash).toBe(125);
+    expect(applyCommand(run, { type: "cancel" }, FIXTURE).error).toBe("Nothing to cancel");
+  });
+
   it("the Coupon discounts everything, removal included", () => {
     const run = shopRun(["coupon"]);
     if (run.screen.kind !== "shop") throw new Error();
@@ -322,6 +338,15 @@ describe("retro", () => {
     run = apply(run, { type: "chooseCards", uids: [run.deck[0].uid] }).run;
     expect(run.deck[0].upgraded).toBe(true);
     expect(run.screen).toEqual({ kind: "retro", done: true });
+  });
+
+  it("backs out of a Refactor before a card is picked, and the Retro is still open", () => {
+    const run = enter(fixtureRun(), { kind: "retro", done: false });
+    run.budget = 10;
+    const back = apply(apply(run, { type: "refactor" }).run, { type: "cancel" }).run;
+    expect(back.screen).toEqual({ kind: "retro", done: false });
+    expect(back.deck).toEqual(run.deck);
+    expect(apply(back, { type: "rest" }).run.budget).toBeGreaterThan(10);
   });
 });
 
@@ -373,6 +398,9 @@ describe("events", () => {
     expect(FIXTURE.relics[corners.relics.at(-1)!.id].rarity).toBe("uncommon");
 
     let dup = apply(at("hackathon"), { type: "eventChoice", index: 3 }).run;
+    // An event's card choice comes after its cost is paid, so it can't be backed out of.
+    expect(canCancelDeckChoice(dup)).toBe(false);
+    expect(applyCommand(dup, { type: "cancel" }, FIXTURE).error).toBe("This choice can't be cancelled");
     expect(dup.deck.at(-1)).toMatchObject({ id: "serve", upgraded: true });
     const first = dup.deck[9];
     dup = apply(dup, { type: "chooseCards", uids: [first.uid] }).run;

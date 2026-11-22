@@ -211,6 +211,7 @@ The chance of a rare card rises the longer you go without seeing one.
 The shop sells 5 cards from your pool, 2 neutral cards, 3 relics and 3 runbooks.
 Removing a card costs 75 cash, and 25 more each time you do it.
 You can remove one card per visit.
+You can back out of a removal before picking the card; the price is refunded and the removal doesn't count.
 You start the run with 99 cash.
 
 | Item | Common | Uncommon | Rare |
@@ -226,6 +227,8 @@ Shop cards are 55% common, 35% uncommon and 10% rare.
 ### Retro and events
 
 A Retro rest recovers 30% of max Error Budget (20% at 99.999%), plus any relic bonus, rounded to the nearest.
+You can back out of a Refactor before picking the card, and the Retro is open again.
+A card an event asks you to pick can't be backed out of, since its cost is already paid.
 A choice that needs N Error Budget needs more than N, so paying it can't breach the SLA.
 A choice that needs N cash needs at least N.
 
