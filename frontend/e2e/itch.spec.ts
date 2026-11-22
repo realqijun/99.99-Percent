@@ -1,4 +1,15 @@
+import { GAME_URL } from "../playwright.config";
 import { expect, openGame, test } from "./support";
+
+// The fixtures, the art gallery and the store page art are dev only; a build shows the title instead.
+for (const query of ["?screen=combat", "?gallery", "?cover", "?banner"]) {
+  test(`leaves the dev page ${query} out of the build`, async ({ page }) => {
+    await page.goto(`${GAME_URL}${query}`);
+    await expect(page.getByRole("heading", { name: "99.99 Percent" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "New run" })).toBeVisible();
+    await expect(page.locator("[data-store-art]")).toHaveCount(0);
+  });
+}
 
 // itch.io embeds the game in an iframe on its own page.
 for (const [width, height] of [[1280, 720], [960, 540]] as const) {

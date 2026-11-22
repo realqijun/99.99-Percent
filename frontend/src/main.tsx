@@ -8,7 +8,7 @@ import App from './App.tsx'
 
 /**
  * Dev only, stripped from builds: `?screen=<fixture>` shows a hand-made run, `?gallery` the art gallery,
- * and `window.debug` holds console helpers for jumping ahead in a real run.
+ * `?cover` and `?banner` the itch.io key art, and `window.debug` holds console helpers for jumping ahead in a real run.
  */
 async function devRoot(): Promise<ReactNode | null> {
   const [{ installDebug }, { gameStore }] = await Promise.all([import('./dev/debug'), import('./game/store')])
@@ -17,6 +17,11 @@ async function devRoot(): Promise<ReactNode | null> {
   if (params.has('gallery')) {
     const { ArtGallery } = await import('./ui/art')
     return <ArtGallery />
+  }
+  const storeArt = (['cover', 'banner'] as const).find((kind) => params.has(kind))
+  if (storeArt) {
+    const { StoreArt } = await import('./dev/StoreArt')
+    return <StoreArt kind={storeArt} />
   }
   const name = params.get('screen')
   if (name === null) return null

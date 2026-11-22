@@ -34,7 +34,7 @@ The code is in `frontend/src/ui/`, the styles in `frontend/src/ui/ui.css` and `f
 
 Run `npm run dev` and open each fixture with `?screen=<name>` (the list is in `src/ui/__fixtures__/runs.ts`; `?screen=title` shows the title).
 The fixtures are real runs built with the engine and the game's content, so names and card text are the real ones.
-`?gallery` shows every sprite and icon.
+`?gallery` shows every sprite and icon, and `?cover` and `?banner` the itch.io key art.
 In dev, `debug.help()` in the console lists helpers that jump a real run ahead, such as `debug.floor(15)` before a boss or `debug.next("vendor")`.
 None of this is in the build.
 Check each screen at 1280x720 and inside a 960x540 iframe.

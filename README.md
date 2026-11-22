@@ -27,6 +27,7 @@ frontend/   the game: React + Vite + TypeScript
 backend/    the old version's Express API, unused by the game
 shared/     types shared with the backend
 docs/       documentation
+itch/       the itch.io store page text and images
 ```
 
 ## Getting started
@@ -46,6 +47,7 @@ npm run dev        # http://localhost:5173
 | `npm test` / `npm run test:coverage` | Vitest |
 | `npm run test:e2e` | Build, then run the Playwright tests |
 | `npm run package:itch` | Build the zip to upload to itch.io |
+| `npm run itch:media` | Redraw the itch.io cover, banner and screenshots in `itch/` |
 
 ## Contributing
 

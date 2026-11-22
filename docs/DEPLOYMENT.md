@@ -26,6 +26,11 @@ The game ships to itch.io as an HTML5 build.
 
 To upload from the command line instead, use [butler](https://itch.io/docs/butler/): `butler push frontend/dist <user>/<game>:html5 --userversion <version>`.
 
+The store page's assets live in `itch/` at the repository root.
+`itch/page.md` holds the page text and the rest of the page settings: genre, tags, mobile and the order of the images.
+`cd frontend && npm run itch:media` redraws the images in that folder: `cover.png` (630x500), `banner.png` (960x250) and five 1280x720 screenshots.
+It starts the dev server and photographs the dev-only key art (`?cover`, `?banner`) and fixture runs (`?screen=<name>`) with Playwright, so rerun it and commit the images after changing the art, the cards or a screen they show.
+
 ## Environment variables
 
 The frontend has none.
