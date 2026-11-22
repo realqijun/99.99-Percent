@@ -1,5 +1,7 @@
+import type { RngStreams } from "./types";
+
 /**
- * Seeded randomness (mulberry32). The generator state lives inside GameState,
+ * Seeded randomness (mulberry32). The generator state lives inside RunState,
  * so a saved run continues with exactly the same sequence after a refresh.
  */
 export interface RngHolder {
@@ -32,4 +34,62 @@ export function normaliseSeed(input: number | string): number {
     h = Math.imul(h, 16777619);
   }
   return h | 0;
+}
+
+// ---------- named streams in RunState.rng ----------
+// map: map layout and the encounter a node holds. shuffle: draw pile order and the player's random targets.
+// cards: card choices in rewards and the shop. ai: enemy Load, moves and Node Failure targets.
+// events: which event a node holds and its random outcomes. rewards: cash, relics, runbooks and prices.
+
+export type StreamName = keyof RngStreams;
+
+export const STREAMS: readonly StreamName[] = ["map", "shuffle", "cards", "ai", "events", "rewards"];
+
+export function seedStreams(seed: string): RngStreams {
+  const rng = {} as RngStreams;
+  for (const name of STREAMS) rng[name] = normaliseSeed(`${seed}:${name}`);
+  return rng;
+}
+
+/** The next float in [0, 1) from one stream, advancing it in place. */
+export function next(rng: RngStreams, stream: StreamName): number {
+  const holder = { rngState: rng[stream] };
+  const value = rand(holder);
+  rng[stream] = holder.rngState;
+  return value;
+}
+
+/** An integer in [min, max], both inclusive. */
+export function intRange(rng: RngStreams, stream: StreamName, min: number, max: number): number {
+  return min + Math.min(max - min, Math.floor(next(rng, stream) * (max - min + 1)));
+}
+
+export function chance(rng: RngStreams, stream: StreamName, p: number): boolean {
+  return next(rng, stream) < p;
+}
+
+export function pickFrom<T>(rng: RngStreams, stream: StreamName, items: readonly T[]): T {
+  return items[intRange(rng, stream, 0, items.length - 1)];
+}
+
+/** A shuffled copy (Fisher-Yates). */
+export function shuffled<T>(rng: RngStreams, stream: StreamName, items: readonly T[]): T[] {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = intRange(rng, stream, 0, i);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Picks one item by weight; entries of weight 0 or less are never picked. Undefined when none can be. */
+export function weightedPick<T>(rng: RngStreams, stream: StreamName, entries: readonly (readonly [T, number])[]): T | undefined {
+  const live = entries.filter(([, w]) => w > 0);
+  if (live.length === 0) return undefined;
+  let roll = next(rng, stream) * live.reduce((sum, [, w]) => sum + w, 0);
+  for (const [item, w] of live) {
+    roll -= w;
+    if (roll < 0) return item;
+  }
+  return live[live.length - 1][0];
 }
