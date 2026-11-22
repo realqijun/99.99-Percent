@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "balance": "vitest run --mode balance",
     "test:e2e": "npm run build && playwright test",
     "package:itch": "npm run build && rm -rf release && mkdir release && cd dist && zip -qr ../release/99.99-percent-html5.zip ."
   },
