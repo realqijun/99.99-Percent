@@ -6,34 +6,37 @@ Test commands are in [testing.md](testing.md); account-specific provider setup i
 ## Hosting
 
 Two Vercel projects deploy from this repository, in the `hoo-di-hengs-projects` team.
-Each rebuilds only when its own folder or `shared/` changed (`ignoreCommand` in its `vercel.json`).
+Each rebuilds only when its own folder changed (`ignoreCommand` in its `vercel.json`).
 
 | Project | Root | Production URL | Notes |
 | --- | --- | --- | --- |
-| `frontend` | `frontend/` | [99-99-percent-web.vercel.app](https://99-99-percent-web.vercel.app) | Static Vite build plus the `/api` account proxy functions in `frontend/api/` |
+| `frontend` | `frontend/` | [99-99-percent-web.vercel.app](https://99-99-percent-web.vercel.app) | Static Vite build |
 | `lingoquest-backend` | `backend/` | [99-99-percent-backend.vercel.app](https://99-99-percent-backend.vercel.app) | Express as a Vercel Function in Singapore (`sin1`), next to the database |
 
 Merges to `main` deploy both projects to production, and every pull request gets preview URLs.
 Changing a domain or setting does not update a running deployment; redeploy after changing environment variables.
 
-The game's canonical URL and Open Graph/Twitter link-preview metadata live in `frontend/index.html`, so crawlers can read them without JavaScript. `frontend/public/social-preview.jpg` is the same 1280×720 banner as the [landing page](https://github.com/CS3216-Final-Project/99.9-Percent-Landing-Page/blob/main/assets/social-preview.jpg), bundled with the game and served at `/social-preview.jpg`. Update the absolute canonical, page and image URLs together if the production domain changes.
+## itch.io
+
+The game ships to itch.io as an HTML5 build.
+
+1. `cd frontend && npm run package:itch` builds and writes `release/99.99-percent-html5.zip`.
+2. On the itch.io page, set Kind of project to HTML, upload the zip and tick "This file will be played in the browser".
+3. Set the embed size to 1280x720 and turn on the fullscreen button.
+
+To upload from the command line instead, use [butler](https://itch.io/docs/butler/): `butler push frontend/dist <user>/<game>:html5 --userversion <version>`.
 
 ## Environment variables
 
-Every `VITE_*` value is compiled into the public bundle, so never put a secret in one.
-Local defaults are in `frontend/.env.example` and `backend/.env.example`.
+The frontend has none.
+Local defaults for the backend are in `backend/.env.example`.
 
 | Project | Variable | Kind | Purpose |
 | --- | --- | --- | --- |
-| frontend | `VITE_API_URL` | Public | Direct API origin for health and feedback, `https://99-99-percent-backend.vercel.app` in production |
-| frontend | `API_PROXY_TARGET` | Server-only | Verified HTTPS backend origin for the `/api` account proxy |
-| frontend | `VITE_ANALYTICS_ENABLED`, `VITE_POSTHOG_TOKEN`, `VITE_POSTHOG_HOST`, `VITE_BUILD_ID` | Public, Production only | Product analytics; see [ANALYTICS.md](ANALYTICS.md#enable-collection) |
 | backend | `CORS_ORIGINS` | Config | Allowed browser origins, comma-separated; `*` matches letters, digits and dashes |
 | backend | `DATABASE_URL` | Secret | Neon pooled connection string for runtime queries |
 | backend | `OPENAI_API_KEY` | Secret | Retained dialogue endpoint |
 | backend | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `APP_ORIGIN` | Secret / Config | Google sign-in and the browser-facing origin for cookies and CSRF |
-
-Vercel's `VERCEL_ENV` and `VERCEL_GIT_COMMIT_SHA` are mapped to `VITE_DEPLOY_ENV` and `VITE_COMMIT_SHA` in `frontend/vite.config.ts`.
 
 Set the backend's `CORS_ORIGINS` to `https://99-99-percent-web.vercel.app,https://frontend-*-hoo-di-hengs-projects.vercel.app`.
 The preview pattern follows the Vercel project name, not its production domain.
@@ -49,7 +52,7 @@ GitHub Actions needs these under Settings > Secrets and variables > Actions:
 
 | Stage | When | Where | What |
 | --- | --- | --- | --- |
-| CI `frontend` | Every PR | `ci.yml` | Gate over `frontend-checks` (lint, typecheck, coverage), `frontend-balance` and ten `frontend-browser` shards |
+| CI `frontend` | Every PR | `ci.yml` | Gate over `frontend-checks`: lint, typecheck, coverage, the itch.io zip and the Playwright tests |
 | CI `backend` | Every PR | `ci.yml` | Lint, typecheck, coverage including every migration on in-memory Postgres, migrations match the schema |
 | Preview deploy | Every PR | Vercel | Preview URL for each project |
 | Production deploy | Push to `main` | Vercel | Both projects |
@@ -58,7 +61,6 @@ GitHub Actions needs these under Settings > Secrets and variables > Actions:
 
 The `frontend` and `backend` checks must pass on a branch that is up to date with `main` before merging.
 CI does not rerun after the merge.
-How the browser shards are split and debugged is in [testing.md](testing.md#ci).
 
 ## Database
 

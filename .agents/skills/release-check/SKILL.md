@@ -16,6 +16,6 @@ For an authorized deployment check:
 - Frontend production domain: `https://99-99-percent-web.vercel.app`.
 - Backend production domain: `https://99-99-percent-backend.vercel.app`.
 - Check health and database health, then send an HTTP request with the frontend Origin and inspect CORS headers. Health alone cannot verify browser access.
-- Verify public frontend `VITE_API_URL` and backend `CORS_ORIGINS` match the intended environment. Preview host patterns follow the Vercel project name. Changing docs or a custom domain does not update hosted environment variables; those settings need redeployment.
+- Verify backend `CORS_ORIGINS` matches the intended environment. Preview host patterns follow the Vercel project name. Changing docs or a custom domain does not update hosted environment variables; those settings need redeployment.
 
 Use read-only checks unless the user's scope authorizes a mutation. Do not infer permission to merge, change branch protection, deploy or run live migrations from a request to create a PR. Report inaccessible hosted settings honestly.

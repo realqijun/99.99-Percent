@@ -1,6 +1,7 @@
 # Authentication and cloud saves
 
 This is the source of truth for accounts, app sessions and cloud saves.
+It describes the old tycoon version. The card game has no accounts, and its frontend no longer has the Account dialog or the `/api` proxy described here; they are in Git history.
 The route list is in [api.md](api.md#account-routes), and general hosting settings are in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Accounts are optional.
