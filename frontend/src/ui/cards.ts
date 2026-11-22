@@ -9,10 +9,13 @@ export const baseCost = (def: CardDef, upgraded: boolean): Cost =>
 
 export const costLabel = (cost: Cost) => (cost === null ? "Unplayable" : cost === "x" ? "costs X" : `costs ${cost}`);
 
+/** Unplayable cards say so in their text, so their label leaves the cost out. */
+const costPart = (cost: Cost) => (cost === null ? "" : `, ${costLabel(cost)}`);
+
 export const cardName = (def: CardDef, upgraded: boolean) => `${def.name}${upgraded ? "+" : ""}`;
 
 export function cardLabel(def: CardDef, upgraded: boolean, cost: Cost, text: string): string {
-  return `${cardName(def, upgraded)}, ${CARD_TYPES[def.type]}, ${costLabel(cost)}. ${text}`;
+  return `${cardName(def, upgraded)}, ${CARD_TYPES[def.type]}${costPart(cost)}. ${text}`;
 }
 
 const TYPE_ORDER = { attack: 0, skill: 1, power: 2, status: 3 };

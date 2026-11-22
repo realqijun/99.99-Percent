@@ -1,5 +1,6 @@
 /* The Retro (rest or refactor) and colleague events. */
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { cantChoose, retroRecoverAmount } from "../../engine";
 import type { RunState } from "../../engine/types";
 import { useGame } from "../../game/store";
 import { Icon } from "../art";
@@ -7,9 +8,10 @@ import { useContent } from "../content";
 import { COLLEAGUE_NAMES, portrait } from "../labels";
 
 export function Retro({ run }: { run: RunState }) {
+  const content = useContent();
   const dispatch = useGame((s) => s.dispatch);
   if (run.screen.kind !== "retro") return null;
-  const pct = run.difficulty >= 3 ? 20 : 30;
+  const recover = retroRecoverAmount(run, content);
   return (
     <main className="room">
       <div className="room__panel panel">
@@ -22,7 +24,7 @@ export function Retro({ run }: { run: RunState }) {
             <button type="button" className="big-choice" onClick={() => dispatch({ type: "rest" })}>
               <Icon name="budget" size={32} />
               <strong>Rest</strong>
-              <span>Recover {pct}% of your max Error Budget.</span>
+              <span>{recover > 0 ? `Recover ${recover} Error Budget.` : "Your Error Budget is already full."}</span>
             </button>
             <button type="button" className="big-choice" onClick={() => dispatch({ type: "refactor" })}>
               <Icon name="type-skill" size={32} />
@@ -46,6 +48,14 @@ export function EventScreen({ run }: { run: RunState }) {
   const dispatch = useGame((s) => s.dispatch);
   const eventId = run.screen.kind === "event" ? run.screen.event : "";
   const [shown, setShown] = useState({ event: eventId, lines: 1 });
+  const actions = useRef<HTMLDivElement>(null);
+  const step = `${shown.lines}:${run.screen.kind === "event" ? run.screen.chosen : ""}`;
+  // Next and the choices replace each other; keep keyboard focus on whatever comes next.
+  useLayoutEffect(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    actions.current?.querySelector<HTMLElement>("button:not([disabled])")?.focus();
+  }, [step]);
   if (run.screen.kind !== "event") return null;
   const event = content.events[eventId];
   const { chosen } = run.screen;
@@ -83,34 +93,36 @@ export function EventScreen({ run }: { run: RunState }) {
             </>
           )}
         </div>
-        {choice ? (
-          <div className="row row--end">
-            <button type="button" className="btn" onClick={() => dispatch({ type: "leave" })}>
-              Continue
-            </button>
-          </div>
-        ) : !allShown ? (
-          <div className="row row--end">
-            <button type="button" className="btn" onClick={() => setShown({ event: eventId, lines: lines + 1 })}>
-              Next
-            </button>
-          </div>
-        ) : (
-          <ul className="event__choices">
-            {event.choices.map((c, i) => {
-              const short = c.requires?.cash !== undefined && run.cash < c.requires.cash ? `Needs ${c.requires.cash} cash` : c.requires?.budget !== undefined && run.budget < c.requires.budget ? `Needs ${c.requires.budget} Error Budget` : null;
-              return (
-                <li key={i}>
-                  <button type="button" className="event-choice" disabled={short !== null} onClick={() => dispatch({ type: "eventChoice", index: i })}>
-                    <strong>{c.label}</strong>
-                    <span>{c.detail}</span>
-                    {short && <span className="bad small">{short}</span>}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <div className="event__actions" ref={actions}>
+          {choice ? (
+            <div className="row row--end">
+              <button type="button" className="btn" onClick={() => dispatch({ type: "leave" })}>
+                Continue
+              </button>
+            </div>
+          ) : !allShown ? (
+            <div className="row row--end">
+              <button type="button" className="btn" onClick={() => setShown({ event: eventId, lines: lines + 1 })}>
+                Next
+              </button>
+            </div>
+          ) : (
+            <ul className="event__choices">
+              {event.choices.map((c, i) => {
+                const short = cantChoose(run, i, content);
+                return (
+                  <li key={i}>
+                    <button type="button" className="event-choice" disabled={short !== null} onClick={() => dispatch({ type: "eventChoice", index: i })}>
+                      <strong>{c.label}</strong>
+                      <span>{c.detail}</span>
+                      {short && <span className="bad small">{short}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </section>
     </main>
   );

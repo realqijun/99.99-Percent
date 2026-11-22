@@ -1,15 +1,16 @@
-import { expect, test } from '@playwright/test';
-import { GAME_URL } from '../playwright.config';
+import { expect, openGame, test } from "./support";
 
 // itch.io embeds the game in an iframe on its own page.
-test('loads inside a 1280x720 iframe from a sub-path', async ({ page }) => {
-  const failed: string[] = [];
-  page.on('response', (r) => { if (r.status() >= 400) failed.push(`${r.status()} ${r.url()}`); });
-  page.on('console', (m) => { if (m.type() === 'error') failed.push(m.text()); });
-
-  await page.setContent(`<iframe src="${GAME_URL}" width="1280" height="720" style="border:0"></iframe>`);
-  const game = page.frameLocator('iframe');
-  await expect(game.getByRole('heading', { name: '99.99 Percent' })).toBeVisible();
-  await game.locator('body').evaluate(() => document.fonts.ready);
-  expect(failed).toEqual([]);
-});
+for (const [width, height] of [[1280, 720], [960, 540]] as const) {
+  test(`loads inside a ${width}x${height} iframe from a sub-path and fits it`, async ({ page }) => {
+    const game = await openGame(page, { size: [width, height] });
+    await expect(game.getByRole("heading", { name: "99.99 Percent" })).toBeVisible();
+    await game.locator("body").evaluate(() => document.fonts.ready);
+    // The 1280x720 stage scales to fill the frame exactly.
+    const stage = await game.locator(".stage").boundingBox();
+    const frame = await page.locator("iframe").boundingBox();
+    expect(Math.round(stage!.width)).toBe(width);
+    expect(Math.round(stage!.height)).toBe(height);
+    expect(Math.round(stage!.x - frame!.x)).toBe(0);
+  });
+}

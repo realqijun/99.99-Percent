@@ -1,6 +1,7 @@
 /* A card asked the player to pick cards; the rest of its effects resolve after the answer. */
 import { useState } from "react";
-import type { CombatState, PendingChoice } from "../../engine/types";
+import { choiceCards } from "../../engine";
+import type { CombatState, PendingChoice, RunState } from "../../engine/types";
 import { useGame } from "../../game/store";
 import { CardGrid } from "../CardGrid";
 import { sortCards } from "../cards";
@@ -18,13 +19,13 @@ const VERBS: Record<PendingChoice["action"], string> = {
 
 const ZONES = { hand: "your hand", draw: "your draw pile", discard: "your discard pile" };
 
-export function ChoiceDialog({ combat, pending }: { combat: CombatState; pending: PendingChoice }) {
+export function ChoiceDialog({ run, combat, pending }: { run: RunState; combat: CombatState; pending: PendingChoice }) {
   const content = useContent();
   const dispatch = useGame((s) => s.dispatch);
   const [picked, setPicked] = useState<number[]>([]);
-  const zone = pending.from === "hand" ? combat.hand : pending.from === "draw" ? sortCards(combat.drawPile, content) : combat.discardPile;
-  const source = pending.source.kind === "card" ? pending.source.uid : null;
-  const cards = zone.filter((c) => c.uid !== source);
+  // The draw pile is shown in deck order so the choice doesn't give away what comes next.
+  const candidates = choiceCards(run, content);
+  const cards = pending.from === "draw" ? sortCards(candidates, content) : candidates;
   const need = pending.optional ? 0 : Math.min(pending.count, cards.length);
   const ready = picked.length >= need && picked.length <= pending.count;
   const title = `Choose ${pending.count === 1 ? "a card" : `${pending.count} cards`} to ${VERBS[pending.action]}`;

@@ -1,5 +1,5 @@
 /* An in-progress run: the top bar over the screen the engine says we are on. */
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { RunState } from "../engine/types";
 import { useGame } from "../game/store";
 import { PileDialog } from "./CardGrid";
@@ -37,6 +37,14 @@ export function Game({ run }: { run: RunState }) {
   const [dialog, setDialog] = useState<"deck" | "settings" | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
   const combat = run.screen.kind === "combat" && run.screen.combat.phase === "player" && !run.screen.combat.pending;
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  // A command can remove or disable the focused control (a played card, a taken reward).
+  // Keep keyboard focus in the screen instead of letting it fall back to the page.
+  useLayoutEffect(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body || !active.isConnected) screenRef.current?.focus({ preventScroll: true });
+  }, [run]);
 
   const useRunbook = (slot: number) => {
     const id = run.runbooks[slot];
@@ -48,7 +56,7 @@ export function Game({ run }: { run: RunState }) {
   return (
     <div className={`game game--${run.screen.kind}`}>
       <TopBar run={run} onDeck={() => setDialog("deck")} onSettings={() => setDialog("settings")} onUseRunbook={combat ? useRunbook : undefined} />
-      <div className="game__screen">
+      <div className="game__screen" ref={screenRef} tabIndex={-1}>
         <Screen run={run} selection={selection} onSelect={setSelection} />
       </div>
       {dialog === "deck" && <PileDialog title="Deck" cards={sortCards(run.deck, content)} onClose={() => setDialog(null)} />}

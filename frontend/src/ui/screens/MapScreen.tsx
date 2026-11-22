@@ -1,7 +1,8 @@
 /* The act map: 15 floors and the boss, scrolled so the current floor is in view. */
 import { useLayoutEffect, useRef } from "react";
 import type { MapNode, NodeKind, RunState } from "../../engine/types";
-import { reachableOf, useGame } from "../../game/store";
+import { reachableNodes } from "../../engine";
+import { useGame } from "../../game/store";
 import { Icon } from "../art";
 import { enemyDef, useContent } from "../content";
 import { ACT_NAMES, NODE_KINDS } from "../labels";
@@ -20,10 +21,10 @@ const LEGEND: NodeKind[] = ["incident", "major", "event", "vendor", "retro", "tr
 export function MapScreen({ run }: { run: RunState }) {
   const content = useContent();
   const dispatch = useGame((s) => s.dispatch);
-  const trail = useGame((s) => s.trail);
   const scroller = useRef<HTMLDivElement>(null);
-  const reachable = new Set(reachableOf(run));
+  const reachable = new Set(reachableNodes(run));
   const nodes = Object.values(run.map.nodes);
+  const trail = run.path;
   const visited = new Set(trail);
   const current = run.position ? run.map.nodes[run.position] : null;
   const bossEnemies = content.encounters[run.map.boss]?.enemies.map((id) => enemyDef(content, id).name).join(", ") || "The boss";

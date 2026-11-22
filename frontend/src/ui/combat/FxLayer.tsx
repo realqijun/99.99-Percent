@@ -1,10 +1,12 @@
 import type { CSSProperties } from "react";
-import { cardTextOf } from "../../game/store";
+import { cardText } from "../../engine";
+import type { CombatState } from "../../engine/types";
 import { CardView } from "../CardView";
 import { cardDef, useContent } from "../content";
 import type { FxItem } from "./useFx";
 
-export function FxLayer({ items }: { items: FxItem[] }) {
+/** `combat` makes the flying card's numbers match the ones it showed in the hand. */
+export function FxLayer({ items, combat }: { items: FxItem[]; combat: CombatState }) {
   const content = useContent();
   return (
     <div className="fx" aria-hidden="true">
@@ -26,7 +28,7 @@ export function FxLayer({ items }: { items: FxItem[] }) {
         } as CSSProperties;
         return (
           <div key={item.id} className="fx-ghost" style={style}>
-            <CardView def={def} upgraded={item.card.upgraded} text={cardTextOf(def, item.card.upgraded)} />
+            <CardView def={def} upgraded={item.card.upgraded} text={cardText(def, item.card.upgraded, combat, undefined, content)} />
           </div>
         );
       })}

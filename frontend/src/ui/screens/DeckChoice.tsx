@@ -1,7 +1,8 @@
 /* Pick a card from the deck outside combat: remove, upgrade (with a preview) or duplicate. */
 import { useState } from "react";
 import type { RunState } from "../../engine/types";
-import { cardTextOf, useGame } from "../../game/store";
+import { cardText } from "../../engine";
+import { useGame } from "../../game/store";
 import { CardGrid } from "../CardGrid";
 import { sortCards } from "../cards";
 import { CardView } from "../CardView";
@@ -41,11 +42,11 @@ export function DeckChoice({ run }: { run: RunState }) {
           <aside className="preview panel" aria-label="Upgrade preview" aria-live="polite">
             {picked && def ? (
               <>
-                <CardView def={def} upgraded={false} text={cardTextOf(def, false)} />
+                <CardView def={def} upgraded={false} text={cardText(def, false, undefined, undefined, content)} />
                 <span className="preview__arrow" aria-hidden="true">
                   &darr;
                 </span>
-                <CardView def={def} upgraded text={cardTextOf(def, true)} />
+                <CardView def={def} upgraded text={cardText(def, true, undefined, undefined, content)} />
               </>
             ) : (
               <p className="muted center">Pick a card to see it upgraded.</p>

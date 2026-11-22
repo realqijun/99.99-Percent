@@ -1,7 +1,7 @@
 /* The hand, fanned along the bottom. Click to pick a card, or drag it up to play it. */
 import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { CardInstance, CombatState, RunState } from "../../engine/types";
-import { cantPlayOf, cardTextOf, costOf } from "../../game/store";
+import { cantPlay, cardText, costNow } from "../../engine";
 import { cardLabel } from "../cards";
 import { CardView } from "../CardView";
 import { cardDef, useContent } from "../content";
@@ -10,6 +10,8 @@ import { Tip } from "../Tip";
 
 export const HAND_WIDTH = 800;
 const CARD_W = 160;
+/** Room each side for the outer cards' tilt, so a full hand stays clear of the piles. */
+const TILT_ROOM = 40;
 const DRAG_PLAY = 110;
 
 interface Drag {
@@ -48,7 +50,7 @@ export function Hand({
   // A drag ends with a click event; this stops that click from also picking the card.
   const dragged = useRef(false);
   const n = combat.hand.length;
-  const spacing = n > 1 ? Math.min(CARD_W - 8, (HAND_WIDTH - CARD_W) / (n - 1)) : 0;
+  const spacing = n > 1 ? Math.min(CARD_W - 8, (HAND_WIDTH - CARD_W - 2 * TILT_ROOM) / (n - 1)) : 0;
 
   useLayoutEffect(() => {
     const root = ref.current?.closest(".combat");
@@ -88,10 +90,10 @@ export function Hand({
     <div className="hand" ref={ref} data-tutorial="hand" role="group" aria-label={`Hand, ${n} ${n === 1 ? "card" : "cards"}`}>
       {combat.hand.map((card, i) => {
         const def = cardDef(content, card.id);
-        const reason = cantPlayOf(run, card.uid, content);
-        const cost = costOf(run, card.uid, content);
+        const reason = cantPlay(run, card.uid, content);
+        const cost = costNow(run, card.uid, content);
         const isSel = selected === card.uid;
-        const text = cardTextOf(def, card.upgraded, combat, isSel ? target : undefined);
+        const text = cardText(def, card.upgraded, combat, isSel ? target : undefined, content);
         const mid = (n - 1) / 2;
         const off = i - mid;
         const x = HAND_WIDTH / 2 - CARD_W / 2 + off * spacing;
@@ -106,7 +108,7 @@ export function Hand({
               data-uid={card.uid}
               className={`hand-card${isSel ? " is-selected" : ""}${reason ? " is-unplayable" : ""}${dragging ? " is-dragging" : ""}`}
               style={style}
-              aria-label={`${i < 9 ? `${i + 1}: ` : ""}${cardLabel(def, card.upgraded, cost, text)}${reason ? ` Can't play: ${reason}.` : ""}`}
+              aria-label={`${i < 9 ? `${i + 1}: ` : ""}${cardLabel(def, card.upgraded, cost, text)}${reason && cost !== null ? ` Can't play: ${reason}.` : ""}`}
               aria-pressed={isSel}
               aria-disabled={reason !== null}
               onClick={() => {

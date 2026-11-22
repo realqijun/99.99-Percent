@@ -49,10 +49,10 @@ function PixelArt({ id, rows, size, label }: { id: string; rows: readonly string
   );
 }
 
-/** An enemy picture by EnemyDef.sprite. Unknown names draw a placeholder. */
-export function Sprite({ name, size = 128 }: { name: string; size?: number }) {
+/** An enemy picture by EnemyDef.sprite. Unknown names draw a placeholder. Decorative unless `label` is given. */
+export function Sprite({ name, size = 128, label }: { name: string; size?: number; label?: string }) {
   const known = Object.hasOwn(SPRITES, name);
-  return <PixelArt id={known ? `sprite:${name}` : "sprite:?"} rows={known ? SPRITES[name] : PLACEHOLDER} size={size} label={name} />;
+  return <PixelArt id={known ? `sprite:${name}` : "sprite:?"} rows={known ? SPRITES[name] : PLACEHOLDER} size={size} label={label} />;
 }
 
 /** A small icon. Decorative unless `label` is given. */
@@ -69,7 +69,7 @@ export function ArtGallery({ scale = 3 }: { scale?: number }) {
       <section style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
         {[...SPRITE_NAMES, "unknown"].map((name) => (
           <figure key={name} style={cell}>
-            <Sprite name={name} size={32 * scale} />
+            <Sprite name={name} size={32 * scale} label={name} />
             <Sprite name={name} size={32} />
             <figcaption>{name}</figcaption>
           </figure>

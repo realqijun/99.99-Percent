@@ -88,7 +88,7 @@ export function useFx(root: RefObject<HTMLElement | null>, rects: Map<number, St
             const to = target?.type === "serve" ? place(enemy(target.enemy)) : null;
             const dx = to ? to.x + to.width / 2 - (from.x + from.width / 2) : 640 - (from.x + from.width / 2);
             const dy = to ? to.y + to.height / 2 - (from.y + from.height / 2) : -200;
-            add({ id: nextId.current++, kind: "ghost", from, dx, dy, card: { uid: e.uid, id: e.card, upgraded: false }, ms: MS.ghost * k });
+            add({ id: nextId.current++, kind: "ghost", from, dx, dy, card: { uid: e.uid, id: e.card, upgraded: e.upgraded }, ms: MS.ghost * k });
             return;
           }
           case "serve":

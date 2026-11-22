@@ -1,4 +1,4 @@
-import { StrictMode, type ComponentType, type ReactNode } from 'react'
+import { StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource/pixelify-sans/latin-400.css'
 import '@fontsource/source-sans-3/latin-400.css'
@@ -6,21 +6,25 @@ import '@fontsource/source-sans-3/latin-600.css'
 import './index.css'
 import App from './App.tsx'
 
-/** Dev only, stripped from builds: `?screen=<fixture>` shows a hand-made run, `?gallery` the art gallery. */
+/**
+ * Dev only, stripped from builds: `?screen=<fixture>` shows a hand-made run, `?gallery` the art gallery,
+ * and `window.debug` holds console helpers for jumping ahead in a real run.
+ */
 async function devRoot(): Promise<ReactNode | null> {
+  const [{ installDebug }, { gameStore }] = await Promise.all([import('./dev/debug'), import('./game/store')])
+  installDebug(gameStore)
   const params = new URLSearchParams(window.location.search)
   if (params.has('gallery')) {
-    const art = (await import('./ui/art')) as Record<string, unknown>
-    const Gallery = art.ArtGallery as ComponentType | undefined
-    return Gallery ? <Gallery /> : <p>The art module has no ArtGallery yet.</p>
+    const { ArtGallery } = await import('./ui/art')
+    return <ArtGallery />
   }
   const name = params.get('screen')
   if (name === null) return null
-  const [{ FIXTURES, FIXTURE_CONTENT }, { gameStore }] = await Promise.all([import('./ui/__fixtures__'), import('./game/store')])
+  const { FIXTURES } = await import('./ui/__fixtures__')
   const fixture = FIXTURES[name]
-  if (fixture) gameStore.getState().loadFixture(structuredClone(fixture.run), fixture.trail)
-  else if (name && name !== 'title') console.warn(`No fixture "${name}". Try: ${Object.keys(FIXTURES).join(', ')}`)
-  return <App content={FIXTURE_CONTENT} />
+  if (fixture) gameStore.getState().loadFixture(structuredClone(fixture.run))
+  else if (name !== 'title') console.warn(`No fixture "${name}". Try: ${Object.keys(FIXTURES).join(', ')}`)
+  return null
 }
 
 async function start() {

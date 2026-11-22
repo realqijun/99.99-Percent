@@ -4,10 +4,11 @@
  */
 import { CONTENT } from "../content";
 import { cantPlayReason, cardCost } from "./combat";
+import { choiceCandidates } from "./effects";
 import { reachableNodes as reachable } from "./map";
-import { applyRunCommand, createRun, retroRecoverAmount as retroAmount, RUN_VERSION } from "./run";
+import { applyRunCommand, createRun, eventChoiceBlocked, retroRecoverAmount as retroAmount, RUN_VERSION } from "./run";
 import { describeCard } from "./text";
-import type { CardDef, CombatState, CommandResult, Command, Content, NewRunOptions, RunState } from "./types";
+import type { CardDef, CardInstance, CombatState, CommandResult, Command, Content, NewRunOptions, RunState } from "./types";
 import { checkRun } from "./validate";
 
 export * from "./types";
@@ -42,6 +43,19 @@ export function costNow(run: RunState, uid: number, content: Content = CONTENT):
 /** Error Budget a Retro rest would recover right now, after difficulty and relics. */
 export function retroRecoverAmount(run: RunState, content: Content = CONTENT): number {
   return retroAmount(run, content);
+}
+
+/** The cards the pending in-combat choice can pick, in pile order; empty when nothing is pending. */
+export function choiceCards(run: RunState, content: Content = CONTENT): CardInstance[] {
+  if (run.screen.kind !== "combat" || !run.screen.combat.pending) return [];
+  const c = run.screen.combat;
+  const { from, action, source } = c.pending!;
+  return choiceCandidates({ run, c, content, events: [] }, from, action, source.kind === "card" ? source.uid : null);
+}
+
+/** Why an event choice can't be made now (not enough cash or Error Budget), or null if it can. */
+export function cantChoose(run: RunState, index: number, content: Content = CONTENT): string | null {
+  return eventChoiceBlocked(run, index, content);
 }
 
 /** Map nodes the player can move to now. */

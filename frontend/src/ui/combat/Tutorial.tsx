@@ -1,67 +1,63 @@
 /* The guided first combat: Maya points at one thing per step. */
-import { useEffect, useState, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useGame } from "../../game/store";
 import { portrait } from "../labels";
 import { useStage, type StageRect } from "../stageContext";
 
-type Side = "above" | "left" | "right";
-
-const STEPS: { target: string; side: Side; line: string }[] = [
-  { target: "hand", side: "above", line: "This is your hand. Each card costs Engineers, shown in its corner." },
-  { target: "intent", side: "left", line: "This is what the incident does next. The number is requests per hit." },
-  { target: "capacity", side: "right", line: "Capacity soaks up requests before they burn your Error Budget." },
-  { target: "endTurn", side: "above", line: "Out of Engineers? End your turn, and the incidents act." },
+const STEPS: { target: string; line: string }[] = [
+  { target: "hand", line: "This is your hand. Each card costs Engineers, shown in its corner." },
+  { target: "intent", line: "This is what the incident does next. The number is requests per hit." },
+  { target: "capacity", line: "Capacity soaks up requests before they burn your Error Budget." },
+  { target: "endTurn", line: "Out of Engineers? End your turn, and the incidents act." },
 ];
 
-const GAP = 16;
+/** The bubble always sits at the top left of the field, clear of the hand, the enemies and End turn; a ring marks the target. */
+const BUBBLE = { left: 320, top: 56, width: 360 };
+/** Room for the fanned cards' tilt around their resting boxes. */
+const FAN = 12;
 
-function place(rect: StageRect | null, side: Side): { left: number; top: number } {
-  if (!rect) return { left: AREA_W / 2 - BUBBLE_W / 2, top: 200 };
-  const midX = rect.x + rect.width / 2 - BUBBLE_W / 2;
-  const midY = rect.y + rect.height / 2 - BUBBLE_H / 2;
-  const at =
-    side === "above" ? { left: midX, top: rect.y - BUBBLE_H - GAP }
-    : side === "left" ? { left: rect.x - BUBBLE_W - GAP, top: midY }
-    : { left: rect.x + rect.width + GAP, top: midY };
-  return {
-    left: Math.max(12, Math.min(AREA_W - BUBBLE_W - 12, at.left)),
-    top: Math.max(12, Math.min(AREA_H - BUBBLE_H - 12, at.top)),
-  };
-}
-
-const BUBBLE_W = 400;
-const BUBBLE_H = 128;
-const AREA_W = 1280;
-const AREA_H = 664;
-
-export function Tutorial({ step, root }: { step: number; root: RefObject<HTMLElement | null> }) {
+/** `handSize` re-measures the ring when cards are played or drawn. */
+export function Tutorial({ step, handSize }: { step: number; handSize: number }) {
   const dispatch = useGame((s) => s.dispatch);
   const stage = useStage();
+  const ref = useRef<HTMLElement>(null);
   const [rect, setRect] = useState<StageRect | null>(null);
   const info = STEPS[Math.min(step, STEPS.length - 1)];
 
-  // Measures the target after the whole screen is laid out (a layout effect here would run before the parent's ref is set).
+  // Measure before paint so the ring never flashes at the previous target.
   /* oxlint-disable react/set-state-in-effect */
-  useEffect(() => {
-    const el = root.current?.querySelector(`[data-tutorial="${info.target}"]`);
-    const origin = root.current?.getBoundingClientRect();
-    if (!el || !origin) {
+  useLayoutEffect(() => {
+    const root = ref.current?.closest(".combat");
+    const el = root?.querySelector(`[data-tutorial="${info.target}"]`);
+    if (!root || !el) {
       setRect(null);
       return;
     }
+    const origin = root.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     const s = stage.scale || 1;
-    setRect({ x: (r.left - origin.left) / s, y: (r.top - origin.top) / s, width: r.width / s, height: r.height / s });
-  }, [info.target, root, stage.scale]);
+    const box = { x: (r.left - origin.left) / s, y: (r.top - origin.top) / s, width: r.width / s, height: r.height / s };
+    // The hand ring hugs the cards' resting places (layout offsets, so the deal animation doesn't matter).
+    const cards = [...el.querySelectorAll<HTMLElement>("[data-uid]")];
+    if (cards.length > 0) {
+      const left = Math.min(...cards.map((c) => c.offsetLeft)) - FAN;
+      const right = Math.max(...cards.map((c) => c.offsetLeft + c.offsetWidth)) + FAN;
+      const top = Math.min(...cards.map((c) => c.offsetTop)) - FAN;
+      box.x += left;
+      box.width = right - left;
+      box.y += top;
+      box.height -= top;
+    }
+    setRect(box);
+  }, [info.target, stage.scale, handSize]);
   /* oxlint-enable react/set-state-in-effect */
 
-  const { left, top } = place(rect, info.side);
   const last = step >= STEPS.length - 1;
 
   return (
     <>
       {rect && <div className="tutorial-ring" style={{ left: rect.x - 6, top: rect.y - 6, width: rect.width + 12, height: rect.height + 12 }} aria-hidden="true" />}
-      <section className="tutorial panel" style={{ left, top, width: BUBBLE_W, minHeight: BUBBLE_H }} aria-label={`Tutorial, step ${step + 1} of ${STEPS.length}`}>
+      <section ref={ref} className="tutorial panel" style={BUBBLE} aria-label={`Tutorial, step ${step + 1} of ${STEPS.length}`}>
         <img src={portrait("maya")} alt="" width={72} height={72} />
         <div className="tutorial__body">
           <p className="tutorial__who">

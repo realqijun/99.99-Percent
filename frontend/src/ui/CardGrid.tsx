@@ -1,6 +1,6 @@
 /* A grid of cards, for the deck and pile viewers and anywhere a card is picked from a list. */
 import type { CardInstance, CombatState } from "../engine/types";
-import { cardTextOf } from "../game/store";
+import { cardText } from "../engine";
 import { baseCost, cardLabel } from "./cards";
 import { CardView } from "./CardView";
 import { cardDef, useContent } from "./content";
@@ -27,7 +27,7 @@ export function CardGrid({
     <ul className="card-grid">
       {cards.map((c) => {
         const def = cardDef(content, c.id);
-        const text = cardTextOf(def, c.upgraded, combat);
+        const text = cardText(def, c.upgraded, combat, undefined, content);
         const face = <CardView def={def} upgraded={c.upgraded} text={text} small />;
         const label = cardLabel(def, c.upgraded, baseCost(def, c.upgraded), text);
         if (!onPick) {
