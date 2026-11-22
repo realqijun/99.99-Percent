@@ -5,8 +5,12 @@ import App from "../../App";
 import type { Command } from "../../engine/types";
 import { gameStore } from "../../game/store";
 import { FIXTURES } from "../__fixtures__";
+import { VICTORY_HOLD_MS } from "./useVictoryHold";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+/** The store's own dispatch, kept before tests replace it with a recorder. */
+const realDispatch = gameStore.getState().dispatch;
 
 let root: Root;
 let host: HTMLDivElement;
@@ -129,5 +133,44 @@ describe("combat", () => {
     click(button("Use"));
     click(button(/^Target Bot Crawler/));
     expect(sent).toEqual([{ type: "useRunbook", slot: 1, target: 1 }]);
+  });
+});
+
+describe("winning", () => {
+  /** The boss fixture with the boss on its last Load, played through the real store and engine. */
+  function nearlyWon(reducedMotion: boolean) {
+    const run = structuredClone(FIXTURES["combat-boss"].run);
+    if (run.screen.kind !== "combat") throw new Error("not in combat");
+    for (const e of run.screen.combat.enemies) e.load = 1;
+    gameStore.getState().loadFixture(run);
+    gameStore.setState({ dispatch: realDispatch, settings: { ...gameStore.getState().settings, reducedMotion } });
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root.render(<App />));
+  }
+
+  it("holds the combat on screen while the winning blow animates, then shows the rewards", () => {
+    vi.useFakeTimers();
+    try {
+      nearlyWon(false);
+      click(button(/^1: Serve/));
+      click(button(/^Target Launch Day/));
+      expect(gameStore.getState().run!.screen.kind).toBe("reward");
+      expect(host.querySelector('main[aria-label="Combat"]')?.hasAttribute("inert")).toBe(true);
+      expect(host.textContent).not.toContain("Rewards");
+      act(() => void vi.advanceTimersByTime(VICTORY_HOLD_MS));
+      expect(host.querySelector('main[aria-label="Combat"]')).toBeNull();
+      expect(host.textContent).toContain("Rewards");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("goes straight to the rewards with Reduce motion", () => {
+    nearlyWon(true);
+    click(button(/^1: Serve/));
+    click(button(/^Target Launch Day/));
+    expect(host.textContent).toContain("Rewards");
   });
 });

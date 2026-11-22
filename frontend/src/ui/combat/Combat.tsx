@@ -24,7 +24,8 @@ export type Selection = { kind: "card"; uid: number } | { kind: "runbook"; slot:
 
 type Pile = "draw" | "discard" | "decommissioned";
 
-export function Combat({ run, combat, selection, onSelect }: { run: RunState; combat: CombatState; selection: Selection; onSelect: (s: Selection) => void }) {
+/** `frozen`: the combat is over and shown only while its last animation plays; nothing on it responds. */
+export function Combat({ run, combat, selection, onSelect, frozen = false }: { run: RunState; combat: CombatState; selection: Selection; onSelect: (s: Selection) => void; frozen?: boolean }) {
   const content = useContent();
   const dispatch = useGame((s) => s.dispatch);
   const root = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
   const fx = useFx(root, rects);
 
   const alive = combat.enemies.filter((e) => !e.resolved);
-  const playerTurn = combat.phase === "player" && !combat.pending;
+  const playerTurn = !frozen && combat.phase === "player" && !combat.pending;
 
   // Drop a selection that no longer points at anything (the card left the hand, the runbook was used).
   const card = selection?.kind === "card" ? combat.hand.find((c) => c.uid === selection.uid) : undefined;
@@ -79,7 +80,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
 
   // Keyboard play. Ignored while a dialog is open or a field has focus.
   const onKey = useEffectEvent((e: KeyboardEvent) => {
-    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (frozen || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
     if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
     if ((e.target as HTMLElement | null)?.closest?.("input, textarea, select")) return;
     if (/^[1-9]$/.test(e.key)) {
@@ -129,7 +130,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
   const selName = card ? cardDef(content, card.id).name : runbook ? runbookDef(content, runbook).name : "";
 
   return (
-    <main className={`combat${sel && needsTarget ? " is-targeting" : ""}`} ref={root} aria-label="Combat">
+    <main className={`combat${sel && needsTarget ? " is-targeting" : ""}`} ref={root} aria-label="Combat" inert={frozen}>
       <div className="combat__left">
         <PlayerPanel run={run} combat={combat} />
         <InfraTray combat={combat} />
