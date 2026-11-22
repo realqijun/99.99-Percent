@@ -374,11 +374,13 @@ function typicalSituation(run: RunState, content: Content): Situation {
   };
   for (const card of run.deck) install(stats(content, card).effects);
   for (const relic of run.relics) install(content.relics[relic.id]?.effects);
+  const attackShare = run.deck.filter((card) => content.cards[card.id]?.type === "attack").length / Math.max(1, run.deck.length);
   const foe = (key: number): Foe => ({ key, load: 22, buffer: 0, incoming: 9, exposed: false, throttled: false, threat: 1.25 });
   return {
     need: 12,
     wBlock: 0.8,
-    wLoad: 0.75,
+    // A deck short on Serve cards needs them more.
+    wLoad: Math.min(1.3, Math.max(0.6, (0.75 * 0.45) / Math.max(0.1, attackShare))),
     turnsLeft: 5,
     engineers: 3,
     foes: [foe(1), foe(2)],

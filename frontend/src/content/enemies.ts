@@ -26,17 +26,17 @@ const LIST: Def[] = [
   {
     id: "trafficSpike", name: "Traffic Spike", tier: "normal", load: [12, 15],
     moves: {
-      surge: { name: "Surge", effects: [hit(8)] },
-      doubleTap: { name: "Double Tap", effects: [hit(5, 2)] },
+      surge: { name: "Surge", effects: [hit(7)] },
+      doubleTap: { name: "Double Tap", effects: [hit(4, 2)] },
       rampUp: { name: "Ramp Up", effects: [hit(4), onSelf("scaling", 1)] },
     },
     ai: { kind: "weighted", weights: { surge: 3, doubleTap: 2, rampUp: 1 }, maxRepeat: 2 },
     description: "A sudden pile of requests. Loud, simple and over soon.",
   },
   {
-    id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [16, 20],
+    id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [18, 22],
     moves: {
-      crawl: { name: "Crawl Every Page", effects: [hit(3, 3)] },
+      crawl: { name: "Crawl Every Page", effects: [hit(4, 3)] },
       scrape: { name: "Scrape", effects: [hit(7), onPlayer("degraded", 1)] },
       spoof: { name: "Spoof User Agent", effects: [buffer(7)] },
     },
@@ -44,58 +44,58 @@ const LIST: Def[] = [
     description: "Reads every page you have, many times, and buys nothing.",
   },
   {
-    id: "slowQuery", name: "Slow Query", tier: "normal", load: [30, 34],
+    id: "slowQuery", name: "Slow Query", tier: "normal", load: [34, 38],
     moves: {
       fullTableScan: { name: "Full Table Scan", effects: [hit(8), onPlayer("latency", 2)] },
-      nPlusOne: { name: "N+1 Queries", effects: [hit(3, 4)] },
+      nPlusOne: { name: "N+1 Queries", effects: [hit(4, 4)] },
       lockWait: { name: "Lock Wait", effects: [hit(14)] },
     },
     ai: { kind: "cycle", moves: ["fullTableScan", "nPlusOne", "lockWait"] },
     description: "Scans the whole table and adds Latency, slowing your Serve.",
   },
   {
-    id: "memoryLeak", name: "Memory Leak", tier: "normal", load: [36, 42],
+    id: "memoryLeak", name: "Memory Leak", tier: "normal", load: [40, 46],
     moves: {
-      allocate: { name: "Allocate", effects: [hit(7), onSelf("scaling", 1)] },
+      allocate: { name: "Allocate", effects: [hit(8), onSelf("scaling", 1)] },
       swapThrash: { name: "Swap Thrash", effects: [hit(4, 2), onSelf("scaling", 1)] },
     },
     ai: { kind: "cycle", moves: ["allocate", "swapThrash"] },
     description: "Gains Scaling every turn. Deal with it before it eats the heap.",
   },
   {
-    id: "coldStart", name: "Cold Start", tier: "normal", load: [24, 30],
+    id: "coldStart", name: "Cold Start", tier: "normal", load: [28, 34],
     moves: {
       booting: { name: "Booting", effects: [buffer(8)] },
       initBurst: { name: "Init Burst", effects: [hit(17)] },
-      warmIdle: { name: "Warm Idle", effects: [hit(5), buffer(6)] },
+      warmIdle: { name: "Warm Idle", effects: [hit(7), buffer(6)] },
     },
     ai: { kind: "script", opening: ["booting"], then: { kind: "cycle", moves: ["initBurst", "warmIdle"] } },
     description: "Spends a turn booting, then hits hard on the first request.",
   },
   {
-    id: "logFlood", name: "Log Flood", tier: "normal", load: [28, 34],
+    id: "logFlood", name: "Log Flood", tier: "normal", load: [32, 38],
     moves: {
       verbose: { name: "Verbose Logging", effects: [hit(7), addCard("techDebt", "discard", 1)] },
       stackTrace: { name: "Stack Trace", effects: [hit(13)] },
-      debugMode: { name: "Debug Mode", effects: [addCard("techDebt", "draw", 2)] },
+      debugMode: { name: "Debug Mode", effects: [hit(5), addCard("techDebt", "draw", 2)] },
     },
     ai: { kind: "weighted", weights: { verbose: 3, stackTrace: 2, debugMode: 1 }, maxRepeat: 1 },
     description: "Writes everything down and clogs your deck with Tech Debt.",
   },
   {
-    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [66, 72],
+    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [70, 76],
     moves: {
       stampede: { name: "Stampede", effects: [hit(4, 4)] },
-      regroup: { name: "Regroup", effects: [onSelf("scaling", 1), buffer(12)] },
+      regroup: { name: "Regroup", effects: [onSelf("scaling", 2), buffer(12)] },
       wakeAll: { name: "Wake Everyone", effects: [hit(14), onPlayer("degraded", 1)] },
     },
     ai: { kind: "script", opening: ["stampede"], then: { kind: "cycle", moves: ["regroup", "stampede", "wakeAll"] } },
     description: "Every client retries at once. Its many hits grow after each Regroup.",
   },
   {
-    id: "lockContention", name: "Lock Contention", tier: "elite", load: [78, 86],
+    id: "lockContention", name: "Lock Contention", tier: "elite", load: [84, 92],
     moves: {
-      acquireLock: { name: "Acquire Lock", effects: [buffer(12), hit(6)] },
+      acquireLock: { name: "Acquire Lock", effects: [buffer(12), hit(8)] },
       waitQueue: { name: "Wait Queue", effects: [hit(7), onPlayer("backlog", 3)] },
       deadlock: { name: "Deadlock", effects: [hit(20)] },
     },
@@ -103,7 +103,7 @@ const LIST: Def[] = [
     description: "Holds a Buffer, queues Backlog, then deadlocks for a big hit.",
   },
   {
-    id: "launchDay", name: "Launch Day", tier: "boss", load: [150, 160],
+    id: "launchDay", name: "Launch Day", tier: "boss", load: [110, 120],
     moves: {
       pressRelease: { name: "Press Release", effects: [summon("trafficSpike", 1)] },
       frontPage: { name: "Front Page", effects: [hit(6, 3)] },
@@ -159,7 +159,7 @@ const LIST: Def[] = [
   {
     id: "connectionLeak", name: "Connection Leak", tier: "normal", load: [52, 60],
     moves: {
-      openSocket: { name: "Open Socket", effects: [hit(5), onPlayer("backlog", 3)] },
+      openSocket: { name: "Open Socket", effects: [hit(5), onPlayer("backlog", 2)] },
       exhaustPool: { name: "Exhaust Pool", effects: [hit(12)] },
       holdOpen: { name: "Hold Open", effects: [buffer(10), onPlayer("backlog", 2)] },
     },
@@ -187,7 +187,7 @@ const LIST: Def[] = [
     description: "Passes on retry, fails in prod. Causes Node Failures.",
   },
   {
-    id: "ddosBotnet", name: "DDoS Botnet", tier: "elite", load: [130, 140],
+    id: "ddosBotnet", name: "DDoS Botnet", tier: "elite", load: [112, 120],
     moves: {
       amplify: { name: "Amplify", effects: [hit(8), onSelf("scaling", 2)] },
       packetFlood: { name: "Packet Flood", effects: [hit(2, 6)] },
@@ -208,7 +208,7 @@ const LIST: Def[] = [
     description: "One half of a cluster with two leaders. The other half is never far.",
   },
   {
-    id: "blackFriday", name: "Black Friday", tier: "boss", load: [290, 300],
+    id: "blackFriday", name: "Black Friday", tier: "boss", load: [205, 215],
     moves: {
       doorbusters: { name: "Doorbusters", effects: [summon("shopperWave", 1)] },
       checkoutRush: { name: "Checkout Rush", effects: [hit(7, 3)] },
@@ -239,7 +239,7 @@ const LIST: Def[] = [
 
   // ---------- Act 3: Hypergrowth ----------
   {
-    id: "cascadingFailure", name: "Cascading Failure", tier: "normal", load: [90, 100],
+    id: "cascadingFailure", name: "Cascading Failure", tier: "normal", load: [82, 90],
     moves: {
       spread: { name: "Spread", effects: [hit(8), onPlayer("degraded", 2)] },
       domino: { name: "Domino", effects: [hit(7, 2), onSelf("scaling", 2)] },
@@ -287,7 +287,7 @@ const LIST: Def[] = [
   {
     id: "zombieProcess", name: "Zombie Process", tier: "normal", load: [56, 64],
     moves: {
-      holdHandles: { name: "Hold File Handles", effects: [hit(10), onPlayer("backlog", 3)] },
+      holdHandles: { name: "Hold File Handles", effects: [hit(9), onPlayer("backlog", 2)] },
       gnaw: { name: "Gnaw", effects: [hit(17)] },
       respawn: { name: "Respawn", effects: [heal(20), buffer(8)] },
     },
@@ -305,17 +305,17 @@ const LIST: Def[] = [
     description: "A setting nobody remembers changing. Slips Config Drift into your deck.",
   },
   {
-    id: "dataCorruption", name: "Data Corruption", tier: "elite", load: [180, 195],
+    id: "dataCorruption", name: "Data Corruption", tier: "elite", load: [150, 160],
     moves: {
       silentCorruption: { name: "Silent Corruption", effects: [onPlayer("backlog", 5), onPlayer("latency", 2)] },
       bitRot: { name: "Bit Rot", effects: [hit(9, 2), addCard("techDebt", "draw", 1)] },
-      checksumFailure: { name: "Checksum Failure", effects: [hit(30)] },
+      checksumFailure: { name: "Checksum Failure", effects: [hit(27)] },
     },
     ai: { kind: "cycle", moves: ["silentCorruption", "bitRot", "checksumFailure"] },
     description: "Quietly wrong for weeks. Stacks Backlog, Latency and Tech Debt.",
   },
   {
-    id: "legacyMonolith", name: "Legacy Monolith", tier: "elite", load: [240, 260],
+    id: "legacyMonolith", name: "Legacy Monolith", tier: "elite", load: [200, 215],
     moves: {
       bigBallOfMud: { name: "Big Ball of Mud", effects: [buffer(40), addCard("techDebt", "discard", 2)] },
       tightCoupling: { name: "Tight Coupling", effects: [hit(12), onSelf("scaling", 3)] },
@@ -325,12 +325,12 @@ const LIST: Def[] = [
     description: "Twenty years of code in one process. Huge Buffer, endless Tech Debt.",
   },
   {
-    id: "regionOutage", name: "Region Outage", tier: "boss", load: [420, 440],
+    id: "regionOutage", name: "Region Outage", tier: "boss", load: [290, 300],
     moves: {
       zoneDown: { name: "Zone Down", effects: [nodeFailure, summon("failingZone", 1)] },
-      brownout: { name: "Brownout", effects: [hit(10, 3)] },
+      brownout: { name: "Brownout", effects: [hit(8, 3)] },
       failoverStorm: { name: "Failover Storm", effects: [nodeFailure, nodeFailure, hit(14)] },
-      totalBlackout: { name: "Total Blackout", effects: [hit(42)] },
+      totalBlackout: { name: "Total Blackout", effects: [hit(34)] },
     },
     ai: {
       kind: "phases",

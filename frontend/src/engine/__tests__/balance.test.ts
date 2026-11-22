@@ -208,7 +208,11 @@ describe("balance", () => {
         }
         process.stdout.write(`${r.character} ${LABELS[r.difficulty]} deaths by tier ${JSON.stringify(tiers)}: ${r.killers.map(([id, k]) => `${id} ${pct(k)}`).join(", ")}\n`);
       }
-      for (const e of encounters) process.stdout.write(`${e.id.padEnd(18)} ${String(e.combats).padStart(5)} ${e.turns.toFixed(1).padStart(5)} ${e.budgetLost.toFixed(1).padStart(6)}\n`);
+      const per = CHARACTERS.map((ch) => new Map(byEncounter(rows.filter((r) => r.character === ch)).map((e) => [e.id, e])));
+      for (const e of encounters) {
+        const cells = per.map((m) => m.get(e.id)).map((x) => (x ? `${String(x.combats).padStart(5)} ${x.turns.toFixed(1).padStart(5)} ${x.budgetLost.toFixed(1).padStart(6)}` : "".padStart(18)));
+        process.stdout.write(`${e.id.padEnd(18)} ${cells.join("   ")}\n`);
+      }
     }
 
     for (const r of rows) {

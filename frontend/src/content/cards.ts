@@ -287,7 +287,7 @@ const TAYLOR: Def[] = [
   },
   {
     id: "blamelessReview", name: "Blameless Review", pool: "taylor", rarity: "common", type: "skill",
-    cost: 1, effects: [recover(3), capacity(3)], upgrade: { effects: [recover(4), capacity(5)] },
+    cost: 1, effects: [recover(4), capacity(4)], upgrade: { effects: [recover(5), capacity(6)] },
     flavor: "It was the system. It's always the system.",
   },
   {
@@ -298,7 +298,7 @@ const TAYLOR: Def[] = [
   },
   {
     id: "hardenHost", name: "Harden Host", pool: "taylor", rarity: "common", type: "skill",
-    cost: 1, effects: [self("hardened", 1), capacity(4)], upgrade: { effects: [self("hardened", 1), capacity(7)] },
+    cost: 1, effects: [self("hardened", 1), capacity(4)], keywords: ["decommission"], upgrade: { effects: [self("hardened", 1), capacity(7)] },
     flavor: "Close every port you didn't open.",
   },
   {
@@ -318,9 +318,9 @@ const TAYLOR: Def[] = [
   },
   {
     id: "escalate", name: "Escalate", pool: "taylor", rarity: "common", type: "attack",
-    cost: 1, effects: [serve(11), { op: "addCard", card: "pager", zone: "discard", count: 1 }],
-    upgrade: { effects: [serve(14), { op: "addCard", card: "pager", zone: "discard", count: 1 }] },
-    flavor: "Wake up the senior. They love this.",
+    cost: 1, effects: [serveAll(7), { op: "addCard", card: "pager", zone: "discard", count: 1 }],
+    upgrade: { effects: [serveAll(10), { op: "addCard", card: "pager", zone: "discard", count: 1 }] },
+    flavor: "Wake up the whole team. They love this.",
   },
   {
     id: "standby", name: "Standby", pool: "taylor", rarity: "common", type: "skill",
