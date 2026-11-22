@@ -111,7 +111,7 @@ const JORDAN: Def[] = [
   },
   {
     id: "fanOut", name: "Fan Out", pool: "jordan", rarity: "common", type: "attack",
-    cost: 1, effects: [serve(3, 2)], upgrade: { effects: [serve(5, 2)] },
+    cost: 1, effects: [serve(4, 2)], upgrade: { effects: [serve(5, 2)] },
     flavor: "Two workers are better than one.",
   },
   {
@@ -159,7 +159,7 @@ const JORDAN: Def[] = [
   },
   {
     id: "requestBatching", name: "Request Batching", pool: "jordan", rarity: "common", type: "attack",
-    cost: 2, effects: [serve(4, 3)], upgrade: { effects: [serve(5, 3)] },
+    cost: 2, effects: [serve(5, 3)], upgrade: { effects: [serve(7, 3)] },
     flavor: "Why answer once when you can answer thrice?",
   },
   {
@@ -245,8 +245,8 @@ const JORDAN: Def[] = [
   },
   {
     id: "hyperscale", name: "Hyperscale", pool: "jordan", rarity: "rare", type: "attack",
-    cost: 1, effects: [serve({ base: 2, per: 3, of: "infraStacks" })],
-    upgrade: { effects: [serve({ base: 4, per: 4, of: "infraStacks" })] },
+    cost: 1, effects: [serve({ base: 4, per: 3, of: "infraStacks" })],
+    upgrade: { effects: [serve({ base: 6, per: 4, of: "infraStacks" })] },
     flavor: "Bigger than the problem. Barely.",
   },
   {
@@ -313,13 +313,13 @@ const TAYLOR: Def[] = [
   },
   {
     id: "killSwitch", name: "Kill Switch", pool: "taylor", rarity: "common", type: "attack",
-    cost: 1, effects: [serve(6), onEnemy("throttled", 1)], upgrade: { effects: [serve(9), onEnemy("throttled", 1)] },
+    cost: 1, effects: [serve(8), onEnemy("throttled", 1)], upgrade: { effects: [serve(11), onEnemy("throttled", 1)] },
     flavor: "Big red button. Labelled, for once.",
   },
   {
     id: "escalate", name: "Escalate", pool: "taylor", rarity: "common", type: "attack",
-    cost: 1, effects: [serve(8), { op: "addCard", card: "pager", zone: "discard", count: 1 }],
-    upgrade: { effects: [serve(11), { op: "addCard", card: "pager", zone: "discard", count: 1 }] },
+    cost: 1, effects: [serve(11), { op: "addCard", card: "pager", zone: "discard", count: 1 }],
+    upgrade: { effects: [serve(14), { op: "addCard", card: "pager", zone: "discard", count: 1 }] },
     flavor: "Wake up the senior. They love this.",
   },
   {
@@ -340,7 +340,7 @@ const TAYLOR: Def[] = [
   },
   {
     id: "onCallRotation", name: "On-Call Rotation", pool: "taylor", rarity: "uncommon", type: "power",
-    cost: 1, effects: [infra("onCall"), { op: "addCard", card: "pager", zone: "draw", count: 1 }], upgrade: { cost: 0 },
+    cost: 1, effects: [infra("onCall"), { op: "addCard", card: "pager", zone: "draw", count: 1 }, capacity(4)], upgrade: { cost: 0 },
     flavor: "Your week. Sorry. Here's the phone.",
   },
   {
@@ -367,8 +367,8 @@ const TAYLOR: Def[] = [
   },
   {
     id: "selfHealing", name: "Self-Healing", pool: "taylor", rarity: "uncommon", type: "skill",
-    cost: 1, effects: [recover(5), { op: "repair" }], keywords: ["decommission"],
-    upgrade: { effects: [recover(8), { op: "repair" }] },
+    cost: 1, effects: [recover(6), { op: "repair" }, capacity(4)], keywords: ["decommission"],
+    upgrade: { effects: [recover(9), { op: "repair" }, capacity(6)] },
     flavor: "It fixed itself. Nobody knows how.",
   },
   {
@@ -384,7 +384,7 @@ const TAYLOR: Def[] = [
   },
   {
     id: "incidentResponse", name: "Incident Response", pool: "taylor", rarity: "uncommon", type: "attack",
-    cost: 1, effects: [serve(6), below(50, serve(6))], upgrade: { effects: [serve(8), below(50, serve(8))] },
+    cost: 1, effects: [serve(7), below(50, serve(7))], upgrade: { effects: [serve(9), below(50, serve(9))] },
     flavor: "Calm voice. Shaking hands.",
   },
   {
@@ -396,7 +396,7 @@ const TAYLOR: Def[] = [
   // rare
   {
     id: "chaosEngineering", name: "Chaos Engineering", pool: "taylor", rarity: "rare", type: "power",
-    cost: 2, effects: [infra("failover", 2), infra("healthChecks"), infra("autoRemediation")], upgrade: { cost: 1 },
+    cost: 2, effects: [infra("failover", 2), infra("healthChecks"), infra("autoRemediation"), capacity(6)], upgrade: { cost: 1 },
     flavor: "Break it on purpose, on a Tuesday.",
   },
   {
@@ -406,8 +406,8 @@ const TAYLOR: Def[] = [
   },
   {
     id: "followTheSun", name: "Follow the Sun", pool: "taylor", rarity: "rare", type: "power",
-    cost: 2, effects: [infra("onCall", 2), { op: "addCard", card: "pager", zone: "draw", count: 2 }],
-    upgrade: { effects: [infra("onCall", 2), { op: "addCard", card: "pager", zone: "draw", count: 2 }, capacity(6)] },
+    cost: 2, effects: [infra("onCall", 2), { op: "addCard", card: "pager", zone: "draw", count: 2 }, capacity(6)],
+    upgrade: { effects: [infra("onCall", 2), { op: "addCard", card: "pager", zone: "draw", count: 2 }, capacity(10)] },
     flavor: "Someone, somewhere, is always awake.",
   },
   {
@@ -434,7 +434,7 @@ const NEUTRAL: Def[] = [
   },
   {
     id: "warmCache", name: "Warm Cache", pool: "neutral", rarity: "common", type: "skill",
-    cost: 1, effects: [warm(2), capacity(3)], upgrade: { effects: [warm(3), capacity(5)] },
+    cost: 1, effects: [warm(2), capacity(4)], upgrade: { effects: [warm(3), capacity(6)] },
     flavor: "Preload the homepage. Pray.",
   },
   {
@@ -465,8 +465,8 @@ const NEUTRAL: Def[] = [
   },
   {
     id: "vacuum", name: "Vacuum", pool: "neutral", rarity: "common", type: "skill",
-    cost: 1, effects: [{ op: "choose", from: "hand", count: 1, action: "decommission", optional: true }, capacity(3)],
-    upgrade: { cost: 0 },
+    cost: 1, effects: [{ op: "choose", from: "hand", count: 1, action: "decommission", optional: true }, capacity(6)],
+    upgrade: { effects: [{ op: "choose", from: "hand", count: 1, action: "decommission", optional: true }, capacity(9)] },
     flavor: "Dead rows out, free space in.",
   },
   {
@@ -477,12 +477,12 @@ const NEUTRAL: Def[] = [
   // uncommon
   {
     id: "cacheTuning", name: "Cache Tuning", pool: "neutral", rarity: "uncommon", type: "power",
-    cost: 1, effects: [infra("cacheTuning"), warm(1)], upgrade: { effects: [infra("cacheTuning"), warm(3)] },
+    cost: 1, effects: [infra("cacheTuning"), warm(2), capacity(4)], upgrade: { effects: [infra("cacheTuning"), warm(4), capacity(6)] },
     flavor: "Bigger TTL, bigger smile.",
   },
   {
     id: "readReplica", name: "Read Replica", pool: "neutral", rarity: "uncommon", type: "power",
-    cost: 2, effects: [infra("readReplica")], upgrade: { cost: 1 },
+    cost: 1, effects: [infra("readReplica")], upgrade: { keywords: ["innate"] },
     flavor: "A copy that only says yes to SELECT.",
   },
   {
@@ -492,7 +492,8 @@ const NEUTRAL: Def[] = [
   },
   {
     id: "rubberDuck", name: "Rubber Duck", pool: "neutral", rarity: "uncommon", type: "skill",
-    cost: 1, effects: [{ op: "choose", from: "discard", count: 1, action: "toHand" }], upgrade: { cost: 0 },
+    cost: 1, effects: [{ op: "choose", from: "discard", count: 1, action: "toHand" }, draw(1)],
+    upgrade: { effects: [{ op: "choose", from: "discard", count: 1, action: "toHand" }, draw(2)] },
     flavor: "Explain it slowly. The duck is listening.",
   },
   {

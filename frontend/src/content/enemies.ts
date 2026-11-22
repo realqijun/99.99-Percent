@@ -26,9 +26,9 @@ const LIST: Def[] = [
   {
     id: "trafficSpike", name: "Traffic Spike", tier: "normal", load: [12, 15],
     moves: {
-      surge: { name: "Surge", effects: [hit(6)] },
-      doubleTap: { name: "Double Tap", effects: [hit(3, 2)] },
-      rampUp: { name: "Ramp Up", effects: [hit(3), onSelf("scaling", 1)] },
+      surge: { name: "Surge", effects: [hit(7)] },
+      doubleTap: { name: "Double Tap", effects: [hit(4, 2)] },
+      rampUp: { name: "Ramp Up", effects: [hit(4), onSelf("scaling", 1)] },
     },
     ai: { kind: "weighted", weights: { surge: 3, doubleTap: 2, rampUp: 1 }, maxRepeat: 2 },
     description: "A sudden pile of requests. Loud, simple and over soon.",
@@ -36,8 +36,8 @@ const LIST: Def[] = [
   {
     id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [16, 20],
     moves: {
-      crawl: { name: "Crawl Every Page", effects: [hit(2, 3)] },
-      scrape: { name: "Scrape", effects: [hit(5), onPlayer("degraded", 1)] },
+      crawl: { name: "Crawl Every Page", effects: [hit(3, 3)] },
+      scrape: { name: "Scrape", effects: [hit(6), onPlayer("degraded", 1)] },
       spoof: { name: "Spoof User Agent", effects: [buffer(7)] },
     },
     ai: { kind: "weighted", weights: { crawl: 2, scrape: 2, spoof: 1 }, maxRepeat: 1 },
@@ -46,9 +46,9 @@ const LIST: Def[] = [
   {
     id: "slowQuery", name: "Slow Query", tier: "normal", load: [30, 34],
     moves: {
-      fullTableScan: { name: "Full Table Scan", effects: [hit(6), onPlayer("latency", 2)] },
-      nPlusOne: { name: "N+1 Queries", effects: [hit(2, 4)] },
-      lockWait: { name: "Lock Wait", effects: [hit(10)] },
+      fullTableScan: { name: "Full Table Scan", effects: [hit(7), onPlayer("latency", 2)] },
+      nPlusOne: { name: "N+1 Queries", effects: [hit(3, 4)] },
+      lockWait: { name: "Lock Wait", effects: [hit(12)] },
     },
     ai: { kind: "cycle", moves: ["fullTableScan", "nPlusOne", "lockWait"] },
     description: "Scans the whole table and adds Latency, slowing your Serve.",
@@ -56,7 +56,7 @@ const LIST: Def[] = [
   {
     id: "memoryLeak", name: "Memory Leak", tier: "normal", load: [36, 42],
     moves: {
-      allocate: { name: "Allocate", effects: [hit(5), onSelf("scaling", 1)] },
+      allocate: { name: "Allocate", effects: [hit(6), onSelf("scaling", 1)] },
       swapThrash: { name: "Swap Thrash", effects: [hit(3, 2), onSelf("scaling", 1)] },
     },
     ai: { kind: "cycle", moves: ["allocate", "swapThrash"] },
@@ -66,8 +66,8 @@ const LIST: Def[] = [
     id: "coldStart", name: "Cold Start", tier: "normal", load: [24, 30],
     moves: {
       booting: { name: "Booting", effects: [buffer(8)] },
-      initBurst: { name: "Init Burst", effects: [hit(13)] },
-      warmIdle: { name: "Warm Idle", effects: [hit(4), buffer(6)] },
+      initBurst: { name: "Init Burst", effects: [hit(15)] },
+      warmIdle: { name: "Warm Idle", effects: [hit(5), buffer(6)] },
     },
     ai: { kind: "script", opening: ["booting"], then: { kind: "cycle", moves: ["initBurst", "warmIdle"] } },
     description: "Spends a turn booting, then hits hard on the first request.",
@@ -75,15 +75,15 @@ const LIST: Def[] = [
   {
     id: "logFlood", name: "Log Flood", tier: "normal", load: [28, 34],
     moves: {
-      verbose: { name: "Verbose Logging", effects: [hit(5), addCard("techDebt", "discard", 1)] },
-      stackTrace: { name: "Stack Trace", effects: [hit(9)] },
+      verbose: { name: "Verbose Logging", effects: [hit(6), addCard("techDebt", "discard", 1)] },
+      stackTrace: { name: "Stack Trace", effects: [hit(11)] },
       debugMode: { name: "Debug Mode", effects: [addCard("techDebt", "draw", 2)] },
     },
     ai: { kind: "weighted", weights: { verbose: 3, stackTrace: 2, debugMode: 1 }, maxRepeat: 1 },
     description: "Writes everything down and clogs your deck with Tech Debt.",
   },
   {
-    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [76, 82],
+    id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [66, 72],
     moves: {
       stampede: { name: "Stampede", effects: [hit(3, 4)] },
       regroup: { name: "Regroup", effects: [onSelf("scaling", 1), buffer(12)] },
@@ -93,9 +93,9 @@ const LIST: Def[] = [
     description: "Every client retries at once. Its many hits grow after each Regroup.",
   },
   {
-    id: "lockContention", name: "Lock Contention", tier: "elite", load: [90, 100],
+    id: "lockContention", name: "Lock Contention", tier: "elite", load: [78, 86],
     moves: {
-      acquireLock: { name: "Acquire Lock", effects: [buffer(14), hit(6)] },
+      acquireLock: { name: "Acquire Lock", effects: [buffer(12), hit(6)] },
       waitQueue: { name: "Wait Queue", effects: [hit(5), onPlayer("backlog", 3)] },
       deadlock: { name: "Deadlock", effects: [hit(17)] },
     },
@@ -103,12 +103,12 @@ const LIST: Def[] = [
     description: "Holds a Buffer, queues Backlog, then deadlocks for a big hit.",
   },
   {
-    id: "launchDay", name: "Launch Day", tier: "boss", load: [235, 245],
+    id: "launchDay", name: "Launch Day", tier: "boss", load: [165, 175],
     moves: {
-      pressRelease: { name: "Press Release", effects: [summon("trafficSpike", 2)] },
-      frontPage: { name: "Front Page", effects: [hit(5, 3)] },
-      signupRush: { name: "Signup Rush", effects: [hit(12), addCard("pager", "draw", 1)] },
-      hugOfDeath: { name: "Hug of Death", effects: [hit(8, 3)] },
+      pressRelease: { name: "Press Release", effects: [summon("trafficSpike", 1)] },
+      frontPage: { name: "Front Page", effects: [hit(6, 3)] },
+      signupRush: { name: "Signup Rush", effects: [hit(14), addCard("pager", "draw", 1)] },
+      hugOfDeath: { name: "Hug of Death", effects: [hit(9, 3)] },
     },
     ai: {
       kind: "phases",
@@ -137,12 +137,14 @@ const LIST: Def[] = [
   {
     id: "retryStorm", name: "Retry Storm", tier: "normal", load: [44, 50],
     moves: {
-      backoff: { name: "Exponential Backoff", effects: [buffer(8), onSelf("retries", 4)] },
+      backoff: { name: "Exponential Backoff", effects: [buffer(8), onSelf("retries", 3)] },
       retry: { name: "Retry", effects: [hit(6, 2)] },
       retryAll: { name: "Retry Everything", effects: [hit(4, 4)] },
+      jitter: { name: "Jittered Backoff", effects: [buffer(8), hit(5)] },
     },
-    ai: { kind: "script", opening: ["backoff"], then: { kind: "cycle", moves: ["retry", "retryAll", "backoff"] } },
-    description: "Has Retries, so it regains Load each turn. Finish it quickly.",
+    // Retries stack twice, then stop, so a slow deck still wins in the end.
+    ai: { kind: "script", opening: ["backoff", "retry", "retryAll", "backoff"], then: { kind: "cycle", moves: ["retry", "retryAll", "jitter"] } },
+    description: "Gains Retries early, so it regains Load each turn. Finish it quickly.",
   },
   {
     id: "noisyNeighbor", name: "Noisy Neighbor", tier: "normal", load: [60, 68],
@@ -206,9 +208,9 @@ const LIST: Def[] = [
     description: "One half of a cluster with two leaders. The other half is never far.",
   },
   {
-    id: "blackFriday", name: "Black Friday", tier: "boss", load: [400, 416],
+    id: "blackFriday", name: "Black Friday", tier: "boss", load: [290, 300],
     moves: {
-      doorbusters: { name: "Doorbusters", effects: [summon("shopperWave", 2)] },
+      doorbusters: { name: "Doorbusters", effects: [summon("shopperWave", 1)] },
       checkoutRush: { name: "Checkout Rush", effects: [hit(7, 3)] },
       flashSale: { name: "Flash Sale", effects: [hit(26)] },
       inventoryLock: { name: "Inventory Lock", effects: [buffer(25), addCard("pager", "draw", 2)] },
@@ -323,7 +325,7 @@ const LIST: Def[] = [
     description: "Twenty years of code in one process. Huge Buffer, endless Tech Debt.",
   },
   {
-    id: "regionOutage", name: "Region Outage", tier: "boss", load: [570, 590],
+    id: "regionOutage", name: "Region Outage", tier: "boss", load: [420, 440],
     moves: {
       zoneDown: { name: "Zone Down", effects: [nodeFailure, summon("failingZone", 1)] },
       brownout: { name: "Brownout", effects: [hit(10, 3)] },
