@@ -17,6 +17,9 @@ async function startFirstRun(game: FrameLocator) {
 
 const combat = (game: FrameLocator) => game.getByRole("main", { name: "Combat" });
 const rewards = (game: FrameLocator) => game.getByRole("heading", { name: "Rewards" });
+/** The fight is won: the combat stays up, frozen with End turn disabled, while its last blow animates, then the rewards show. */
+const fightOver = async (game: FrameLocator) =>
+  (await rewards(game).isVisible()) || (await game.getByRole("button", { name: /^End turn/ }).isDisabled());
 
 /** Plays every Serve it can afford on the first enemy, then any other card, then ends the turn, until the fight is won. */
 async function winByClicking(game: FrameLocator) {
@@ -37,11 +40,11 @@ async function winByClicking(game: FrameLocator) {
         else await game.getByRole("button", { name: /^Target / }).first().click();
         await expect(hand(game).getByRole("button", { name: label, exact: true })).toHaveCount(0);
       } else break;
-      if (await rewards(game).isVisible()) return;
+      if (await fightOver(game)) return;
     }
-    if (await rewards(game).isVisible()) return;
+    if (await fightOver(game)) return;
     await game.getByRole("button", { name: /^End turn/ }).click();
-    if (await rewards(game).isVisible()) return;
+    if (await fightOver(game)) return;
   }
   throw new Error("The first combat didn't end");
 }
@@ -90,21 +93,21 @@ async function winByKeyboard(page: Page, game: FrameLocator) {
     await expect(game.getByRole("button", { name: /^End turn/ })).toBeEnabled();
     for (;;) {
       const playable = hand(game).getByRole("button", { disabled: false });
-      if ((await playable.count()) === 0 || (await rewards(game).isVisible())) break;
+      if ((await playable.count()) === 0 || (await fightOver(game))) break;
       const label = (await playable.first().getAttribute("aria-label"))!;
       const played = game.getByRole("button", { name: /^Discard pile|^Decommissioned/ });
       const before = await played.evaluateAll((piles) => piles.map((p) => p.getAttribute("aria-label")).join());
       await page.keyboard.press(label.split(":")[0]);
       await expect(hand(game).getByRole("button", { name: label, exact: true })).toHaveAttribute("aria-pressed", "true");
       await page.keyboard.press("Enter");
-      if (await rewards(game).isVisible()) return;
+      if (await fightOver(game)) return;
       // The card left the hand for the discard pile or for good.
       await expect.poll(() => played.evaluateAll((piles) => piles.map((p) => p.getAttribute("aria-label")).join())).not.toBe(before);
     }
-    if (await rewards(game).isVisible()) return;
+    if (await fightOver(game)) return;
     await page.keyboard.press("e");
     await expect(game.getByText(`Turn ${turn + 1}`).or(rewards(game))).toBeVisible();
-    if (await rewards(game).isVisible()) return;
+    if (await fightOver(game)) return;
   }
   throw new Error("The first combat didn't end");
 }

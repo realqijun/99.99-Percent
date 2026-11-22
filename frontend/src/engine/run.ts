@@ -4,7 +4,7 @@
 import { activateRunbook, chooseInCombat, endTurn, playCard, settleCombat, startCombat, TUTORIAL_STEPS } from "./combat";
 import { fireRelics, type Ctx } from "./effects";
 import { BOSS_NODE, generateMap, pickEncounter, reachableNodes } from "./map";
-import { bossRelicChoices, combatRewards, makeShop, randomCardOf, removalPrice, rollRelic, rollRunbook } from "./rewards";
+import { bossRelicChoices, combatRewards, makeShop, randomCardOf, rollRelic, rollRunbook } from "./rewards";
 import { seedStreams, weightedPick } from "./rng";
 import type {
   Act,
@@ -253,6 +253,27 @@ function deckChoice(run: RunState, uids: number[], content: Content, events: Gam
   return null;
 }
 
+/** A Refactor or a card removal can be backed out of; an event's card choice comes after its cost is paid. */
+export function deckChoiceCancellable(run: RunState): boolean {
+  return run.screen.kind === "deckChoice" && (run.screen.then.kind === "retro" || run.screen.then.kind === "shop");
+}
+
+function cancelDeckChoice(run: RunState, events: GameEvent[]): string | null {
+  if (run.screen.kind !== "deckChoice") return "Nothing to cancel";
+  if (!deckChoiceCancellable(run)) return "This choice can't be cancelled";
+  const then = run.screen.then;
+  if (then.kind === "retro") then.done = false;
+  if (then.kind === "shop") {
+    // A refund, not earnings: the stats don't count it.
+    run.cash += then.shop.removalPrice;
+    events.push({ type: "cash", amount: then.shop.removalPrice });
+    run.removals -= 1;
+    then.shop.removalUsed = false;
+  }
+  run.screen = then;
+  return null;
+}
+
 function leave(run: RunState, content: Content, events: GameEvent[]): string | null {
   switch (run.screen.kind) {
     case "reward":
@@ -336,9 +357,9 @@ function shopCommand(run: RunState, cmd: Command, content: Content, events: Game
       if (shop.removalUsed) return "Already used";
       if (run.deck.length === 0) return "No cards to remove";
       if (!pay(shop.removalPrice)) return "Not enough cash";
+      // The shop keeps the price paid, so backing out can refund it; the next shop charges more.
       run.removals += 1;
       shop.removalUsed = true;
-      shop.removalPrice = removalPrice(run, content);
       openDeckChoice(run, "remove", content);
       return null;
     }
@@ -428,6 +449,8 @@ function dispatch(run: RunState, cmd: Command, content: Content, events: GameEve
       return null;
     case "leave":
       return leave(run, content, events);
+    case "cancel":
+      return cancelDeckChoice(run, events);
     case "abandon":
       endRun(run, "lost", events);
       return null;

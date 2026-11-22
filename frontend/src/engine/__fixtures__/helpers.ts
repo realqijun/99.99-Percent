@@ -130,7 +130,7 @@ export function candidateCommands(run: RunState, rng: RngHolder, content: Conten
     case "bossRelic":
       return [...shuffle(rng, s.choices.map((_, index): Command => ({ type: "pickBossRelic", index }))), { type: "leave" }];
     case "deckChoice":
-      return shuffle(rng, run.deck).map((card): Command => ({ type: "chooseCards", uids: [card.uid] }));
+      return [...shuffle(rng, run.deck).map((card): Command => ({ type: "chooseCards", uids: [card.uid] })), { type: "cancel" }];
     case "summary":
       return [];
   }

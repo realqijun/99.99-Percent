@@ -27,6 +27,8 @@ The code is in `frontend/src/ui/`, the styles in `frontend/src/ui/ui.css` and `f
 - The UI shows only engine state.
   Card text, costs, playability, reachable nodes, choice candidates, event requirements and the Retro amount come from the engine's API in `engine/index.ts`.
 - Animation comes from the store's event queue, 100-350 ms per effect, halved on Fast, and off with Reduce motion.
+- After the winning blow the combat stays on screen, frozen, for 900 ms (450 ms on Fast, none with Reduce motion) so the blow plays out before the rewards show.
+  The engine's run is already on the reward screen; the hold is UI only.
 
 ## Review checklist
 
