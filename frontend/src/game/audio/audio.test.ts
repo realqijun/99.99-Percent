@@ -18,7 +18,7 @@ const EVENTS: { [K in GameEvent["type"]]: [Extract<GameEvent, { type: K }>, Cue 
   turnStart: [[{ type: "turnStart", turn: 2 }, null]],
   draw: [[{ type: "draw", uids: [1, 2] }, "draw"]],
   shuffle: [[{ type: "shuffle" }, "shuffle"]],
-  cardPlayed: [[{ type: "cardPlayed", uid: 1, card: "serve" }, "cardPlay"]],
+  cardPlayed: [[{ type: "cardPlayed", uid: 1, card: "serve", upgraded: false }, "cardPlay"]],
   cardDecommissioned: [[{ type: "cardDecommissioned", uid: 1 }, null]],
   serve: [[{ type: "serve", enemy: 0, amount: 6, absorbed: 0 }, "serve"]],
   capacity: [

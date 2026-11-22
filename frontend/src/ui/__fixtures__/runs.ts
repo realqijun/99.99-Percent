@@ -68,6 +68,7 @@ function run(screen: Screen, over: Partial<RunState> = {}): RunState {
     act: 1,
     map: FIXTURE_MAP,
     position: fixtureTrail(3)[2],
+    path: fixtureTrail(3),
     budget: 54,
     maxBudget: 72,
     cash: 123,
