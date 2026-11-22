@@ -6,7 +6,7 @@ import { INFRA, STATUSES, intentText, portrait } from "../labels";
 import { Tip } from "../Tip";
 
 /** The attack, with its numbers, leads; the move's other kinds follow as small icons. */
-function IntentBadge({ intent, small = false }: { intent: Intent; small?: boolean }) {
+export function IntentBadge({ intent, small = false }: { intent: Intent; small?: boolean }) {
   const kinds = intent.kinds.length > 0 ? intent.kinds : (["unknown"] as const);
   const kind = intent.hit ? "attack" : kinds[0];
   const others = kinds.filter((k) => k !== kind);
@@ -196,7 +196,10 @@ export function EnemyView({
             )}
             <Meter value={enemy.load} max={enemy.maxLoad} tone="load" label={`${def.name} Load`} />
           </div>
-          <Statuses statuses={enemy.statuses} label={`${def.name} statuses`} />
+          {/* Always there, so enemies with and without statuses line up. */}
+          <div className="enemy__statuses">
+            <Statuses statuses={enemy.statuses} label={`${def.name} statuses`} />
+          </div>
         </>
       )}
     </div>

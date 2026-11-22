@@ -1,0 +1,100 @@
+/* The itch.io key art (dev only). Sizes are in screen pixels: the art is screenshotted at 1x. */
+
+.store-art {
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 4px),
+    radial-gradient(ellipse at 50% 0%, rgba(110, 90, 200, 0.28), transparent 65%),
+    var(--bg);
+  color: var(--text);
+}
+
+.store-art__brand {
+  position: absolute;
+  display: grid;
+  gap: 10px;
+}
+
+.store-art__logo {
+  white-space: nowrap;
+}
+
+.store-art__tagline {
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.store-art__hand {
+  position: absolute;
+  display: flex;
+}
+
+.store-art__hand > .card {
+  flex: none;
+  transform-origin: 50% 100%;
+}
+
+.store-art__hand > .card:first-child {
+  transform: rotate(-7deg);
+}
+
+.store-art__hand > .card:last-child {
+  margin-left: -56px;
+  transform: translateY(10px) rotate(6deg);
+}
+
+.store-art__enemy {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.store-art__sprite {
+  position: relative;
+  display: grid;
+  place-items: end center;
+}
+
+.store-art__sprite > svg {
+  position: relative;
+}
+
+.store-art__shadow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  translate: -50% 0;
+  background: rgba(8, 7, 15, 0.55);
+}
+
+/* ---------- cover, 630x500 ---------- */
+
+.store-art--cover .store-art__brand {
+  top: 30px;
+  left: 0;
+  right: 0;
+  justify-items: center;
+}
+
+.store-art--cover .store-art__logo {
+  font-size: 76px;
+}
+
+.store-art--cover .store-art__hand {
+  left: 34px;
+  top: 214px;
+}
+
+/* ---------- banner, 960x250 ---------- */
+
+.store-art--banner .store-art__brand {
+  left: 40px;
+  top: 66px;
+}
+
+.store-art--banner .store-art__logo {
+  font-size: 70px;
+}

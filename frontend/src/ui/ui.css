@@ -1778,9 +1778,12 @@ kbd {
   color: var(--text);
 }
 
+.enemy__statuses {
+  min-height: 26px;
+}
+
 .enemy .statuses {
   justify-content: center;
-  min-height: 26px;
 }
 
 .enemy.is-resolved {

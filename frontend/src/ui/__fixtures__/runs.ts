@@ -5,10 +5,10 @@
 import { CONTENT } from "../../content";
 // Engine internals rather than ../../engine, so tests that mock the engine's API can still use these.
 import { settleCombat, startCombat } from "../../engine/combat";
-import { reachableNodes } from "../../engine/map";
+import { generateMap, reachableNodes } from "../../engine/map";
 import { makeShop } from "../../engine/rewards";
 import { createRun } from "../../engine/run";
-import type { CardInstance, CombatState, RunState, Screen } from "../../engine/types";
+import type { CardInstance, CombatState, EnemyState, RunState, Screen } from "../../engine/types";
 
 const BASE: RunState = (() => {
   const run = createRun({ seed: "FX7Q2M", character: "jordan", difficulty: 1, tutorial: false }, CONTENT);
@@ -37,9 +37,28 @@ function run(screen: Screen, over: Partial<RunState> = {}): RunState {
 
 const card = (r: RunState, id: string, upgraded = false): CardInstance => ({ uid: r.nextUid++, id, upgraded });
 
+/** Taylor at the end of Act 2, for a late-run fight. */
+const TAYLOR: RunState = (() => {
+  const run = createRun({ seed: "K3V9RA", character: "taylor", difficulty: 2, tutorial: false }, CONTENT);
+  run.act = 2;
+  run.map = generateMap(run.rng, CONTENT, 2);
+  run.position = "boss";
+  run.budget = 43;
+  run.cash = 214;
+  run.relics.push({ id: "warmStandby", counter: 0 }, { id: "sloReport", counter: 0 }, { id: "wallDashboard", counter: 0 });
+  run.runbooks = ["scaleUp", "rollback", null];
+  const added = [["killSwitch", true], ["failover", false], ["circuitBreaker", false], ["shedLoad", false], ["escalate", false], ["readCache", true], ["autoRemediation", false]] as const;
+  for (const [id, upgraded] of added) run.deck.push({ uid: run.nextUid++, id, upgraded });
+  return run;
+})();
+
 /** A run inside a real combat of this encounter; `edit` sets up the hand, statuses and so on, then intents are refreshed. */
-function inCombat(encounter: string, edit: (c: CombatState, r: RunState) => void = () => {}, over: Partial<RunState> = {}): RunState {
-  const r = run({ kind: "map" }, over);
+function inCombat(
+  encounter: string,
+  edit: (c: CombatState, r: RunState) => void = () => {},
+  over: Partial<RunState> = {},
+  r: RunState = run({ kind: "map" }, over),
+): RunState {
   startCombat(r, encounter, CONTENT, [], false);
   if (r.screen.kind !== "combat") throw new Error(`No combat for ${encounter}`);
   const c = r.screen.combat;
@@ -58,6 +77,20 @@ const typical = (c: CombatState, r: RunState) => {
   c.hand = hand(r, ["serve", "serve", "provision", "loadBalancer", "inspect"], [3]);
   c.discardPile = hand(r, ["serve", "provision", "serve"], [2]);
 };
+
+/** An enemy that joined mid-fight, as a summon adds it. Its intent numbers are filled in when the combat settles. */
+const summoned = (c: CombatState, id: string, load: number, maxLoad: number, move: string): EnemyState => ({
+  key: c.nextEnemyKey++,
+  id,
+  load,
+  maxLoad,
+  buffer: 0,
+  statuses: {},
+  intent: { move, kinds: [], hit: null },
+  upcoming: [],
+  history: [],
+  resolved: false,
+});
 
 export const FIXTURES: Record<string, { run: RunState }> = {
   map: { run: run({ kind: "map" }) },
@@ -118,6 +151,60 @@ export const FIXTURES: Record<string, { run: RunState }> = {
     ),
   },
   "combat-write": { run: inCombat("a1MemoryLeak", typical) },
+  // Act 2 with the infrastructure warmed up and routed. The itch.io page shows it.
+  "combat-infra-trio": {
+    run: inCombat(
+      "a2StampedeTrio",
+      (c, r) => {
+        c.turn = 4;
+        c.engineers = 3;
+        c.capacity = 13;
+        c.statuses = { optimized: 1 };
+        c.infra = {
+          readCache: { stacks: 1, disabled: 0, warmth: 3 },
+          loadBalancer: { stacks: 1, disabled: 0 },
+          appServer: { stacks: 2, disabled: 0 },
+          cdn: { stacks: 1, disabled: 0 },
+        };
+        c.hand = hand(r, ["serve", "fanOut", "readReplica", "hotfix", "warmCache"], [0]);
+        c.discardPile = hand(r, ["serve", "provision", "loadBalancer", "appServer", "serve", "readCache"]);
+        const [spike, stampede, other] = c.enemies;
+        spike.load = 6;
+        stampede.statuses = { exposed: 2 };
+        other.statuses = { scaling: 1 };
+      },
+      { act: 2, budget: 47, cash: 186, position: PATH[6], path: PATH.slice(0, 7) },
+    ),
+  },
+  // Taylor against Black Friday after its Doorbusters, with failover and circuit breakers up. The itch.io page shows it.
+  "combat-boss-act2": {
+    run: inCombat(
+      "a2BlackFriday",
+      (c, r) => {
+        c.turn = 5;
+        c.engineers = 3;
+        c.capacity = 11;
+        c.statuses = { hardened: 1 };
+        c.infra = {
+          readCache: { stacks: 1, disabled: 0, warmth: 5 },
+          healthChecks: { stacks: 1, disabled: 0 },
+          failover: { stacks: 2, disabled: 0 },
+          circuitBreaker: { stacks: 2, disabled: 0 },
+          autoRemediation: { stacks: 1, disabled: 0 },
+        };
+        c.hand = hand(r, ["killSwitch", "serve", "shedLoad", "escalate", "failover"], [0]);
+        c.discardPile = hand(r, ["serve", "provision", "serve", "triage", "circuitBreaker", "provision", "serve"]);
+        const [boss] = c.enemies;
+        boss.load = Math.round(boss.maxLoad * 0.64);
+        boss.history = ["doorbusters", "checkoutRush", "inventoryLock"];
+        boss.intent = { move: "flashSale", kinds: [], hit: null };
+        c.enemies.push(summoned(c, "shopperWave", 22, 22, "refreshSpam"), summoned(c, "shopperWave", 9, 23, "addToCart"));
+        c.enemies[1].statuses = { throttled: 1 };
+      },
+      {},
+      structuredClone(TAYLOR),
+    ),
+  },
   "combat-low-budget": {
     run: inCombat(
       "a2Botnet",
@@ -162,6 +249,7 @@ export const FIXTURES: Record<string, { run: RunState }> = {
   retro: { run: run({ kind: "retro", done: false }) },
   "retro-done": { run: run({ kind: "retro", done: true }) },
   event: { run: run({ kind: "event", event: "ticketQueue", chosen: null }) },
+  "event-sam": { run: run({ kind: "event", event: "goingViral", chosen: null }) },
   "event-chosen": { run: run({ kind: "event", event: "ticketQueue", chosen: 1 }) },
   treasure: { run: run({ kind: "treasure", relic: "featureFlags", taken: false }) },
   "boss-relic": { run: run({ kind: "bossRelic", choices: ["offshoreContractors", "containerOrchestrator", "multiRegion"] }, { position: "boss" }) },
