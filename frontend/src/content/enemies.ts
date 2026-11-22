@@ -26,8 +26,8 @@ const LIST: Def[] = [
   {
     id: "trafficSpike", name: "Traffic Spike", tier: "normal", load: [12, 15],
     moves: {
-      surge: { name: "Surge", effects: [hit(7)] },
-      doubleTap: { name: "Double Tap", effects: [hit(4, 2)] },
+      surge: { name: "Surge", effects: [hit(8)] },
+      doubleTap: { name: "Double Tap", effects: [hit(5, 2)] },
       rampUp: { name: "Ramp Up", effects: [hit(4), onSelf("scaling", 1)] },
     },
     ai: { kind: "weighted", weights: { surge: 3, doubleTap: 2, rampUp: 1 }, maxRepeat: 2 },
@@ -37,7 +37,7 @@ const LIST: Def[] = [
     id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [16, 20],
     moves: {
       crawl: { name: "Crawl Every Page", effects: [hit(3, 3)] },
-      scrape: { name: "Scrape", effects: [hit(6), onPlayer("degraded", 1)] },
+      scrape: { name: "Scrape", effects: [hit(7), onPlayer("degraded", 1)] },
       spoof: { name: "Spoof User Agent", effects: [buffer(7)] },
     },
     ai: { kind: "weighted", weights: { crawl: 2, scrape: 2, spoof: 1 }, maxRepeat: 1 },
@@ -46,9 +46,9 @@ const LIST: Def[] = [
   {
     id: "slowQuery", name: "Slow Query", tier: "normal", load: [30, 34],
     moves: {
-      fullTableScan: { name: "Full Table Scan", effects: [hit(7), onPlayer("latency", 2)] },
+      fullTableScan: { name: "Full Table Scan", effects: [hit(8), onPlayer("latency", 2)] },
       nPlusOne: { name: "N+1 Queries", effects: [hit(3, 4)] },
-      lockWait: { name: "Lock Wait", effects: [hit(12)] },
+      lockWait: { name: "Lock Wait", effects: [hit(14)] },
     },
     ai: { kind: "cycle", moves: ["fullTableScan", "nPlusOne", "lockWait"] },
     description: "Scans the whole table and adds Latency, slowing your Serve.",
@@ -56,8 +56,8 @@ const LIST: Def[] = [
   {
     id: "memoryLeak", name: "Memory Leak", tier: "normal", load: [36, 42],
     moves: {
-      allocate: { name: "Allocate", effects: [hit(6), onSelf("scaling", 1)] },
-      swapThrash: { name: "Swap Thrash", effects: [hit(3, 2), onSelf("scaling", 1)] },
+      allocate: { name: "Allocate", effects: [hit(7), onSelf("scaling", 1)] },
+      swapThrash: { name: "Swap Thrash", effects: [hit(4, 2), onSelf("scaling", 1)] },
     },
     ai: { kind: "cycle", moves: ["allocate", "swapThrash"] },
     description: "Gains Scaling every turn. Deal with it before it eats the heap.",
@@ -66,7 +66,7 @@ const LIST: Def[] = [
     id: "coldStart", name: "Cold Start", tier: "normal", load: [24, 30],
     moves: {
       booting: { name: "Booting", effects: [buffer(8)] },
-      initBurst: { name: "Init Burst", effects: [hit(15)] },
+      initBurst: { name: "Init Burst", effects: [hit(17)] },
       warmIdle: { name: "Warm Idle", effects: [hit(5), buffer(6)] },
     },
     ai: { kind: "script", opening: ["booting"], then: { kind: "cycle", moves: ["initBurst", "warmIdle"] } },
@@ -75,8 +75,8 @@ const LIST: Def[] = [
   {
     id: "logFlood", name: "Log Flood", tier: "normal", load: [28, 34],
     moves: {
-      verbose: { name: "Verbose Logging", effects: [hit(6), addCard("techDebt", "discard", 1)] },
-      stackTrace: { name: "Stack Trace", effects: [hit(11)] },
+      verbose: { name: "Verbose Logging", effects: [hit(7), addCard("techDebt", "discard", 1)] },
+      stackTrace: { name: "Stack Trace", effects: [hit(13)] },
       debugMode: { name: "Debug Mode", effects: [addCard("techDebt", "draw", 2)] },
     },
     ai: { kind: "weighted", weights: { verbose: 3, stackTrace: 2, debugMode: 1 }, maxRepeat: 1 },
@@ -85,9 +85,9 @@ const LIST: Def[] = [
   {
     id: "thunderingHerd", name: "Thundering Herd", tier: "elite", load: [66, 72],
     moves: {
-      stampede: { name: "Stampede", effects: [hit(3, 4)] },
+      stampede: { name: "Stampede", effects: [hit(4, 4)] },
       regroup: { name: "Regroup", effects: [onSelf("scaling", 1), buffer(12)] },
-      wakeAll: { name: "Wake Everyone", effects: [hit(12), onPlayer("degraded", 1)] },
+      wakeAll: { name: "Wake Everyone", effects: [hit(14), onPlayer("degraded", 1)] },
     },
     ai: { kind: "script", opening: ["stampede"], then: { kind: "cycle", moves: ["regroup", "stampede", "wakeAll"] } },
     description: "Every client retries at once. Its many hits grow after each Regroup.",
@@ -96,14 +96,14 @@ const LIST: Def[] = [
     id: "lockContention", name: "Lock Contention", tier: "elite", load: [78, 86],
     moves: {
       acquireLock: { name: "Acquire Lock", effects: [buffer(12), hit(6)] },
-      waitQueue: { name: "Wait Queue", effects: [hit(5), onPlayer("backlog", 3)] },
-      deadlock: { name: "Deadlock", effects: [hit(17)] },
+      waitQueue: { name: "Wait Queue", effects: [hit(7), onPlayer("backlog", 3)] },
+      deadlock: { name: "Deadlock", effects: [hit(20)] },
     },
     ai: { kind: "cycle", moves: ["acquireLock", "waitQueue", "deadlock"] },
     description: "Holds a Buffer, queues Backlog, then deadlocks for a big hit.",
   },
   {
-    id: "launchDay", name: "Launch Day", tier: "boss", load: [165, 175],
+    id: "launchDay", name: "Launch Day", tier: "boss", load: [150, 160],
     moves: {
       pressRelease: { name: "Press Release", effects: [summon("trafficSpike", 1)] },
       frontPage: { name: "Front Page", effects: [hit(6, 3)] },

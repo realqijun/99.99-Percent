@@ -77,6 +77,8 @@ interface Situation {
   latencyTurns: number;
   degraded: number;
   intents: IntentKind[];
+  /** Cards in the combat's piles, to judge how often an added card comes back. */
+  deckSize: number;
   /** Status cards in hand that a decommission choice could remove. */
   junkInHand: number;
   /** Expected Node Failures per turn. */
@@ -255,9 +257,13 @@ function score(effects: Effect[], s: Situation, chosen: Foe | undefined, fromCar
       case "warmCache":
         v += stacks(s, "readCache") > 0 ? e.amount * stacks(s, "readCache") * Math.min(s.turnsLeft, 3) * 0.6 : 0;
         break;
-      case "addCard":
-        v -= e.count * (e.card === "techDebt" ? 1.5 : e.card === "pager" || e.card === "configDrift" ? 2.5 : -2);
+      case "addCard": {
+        // A status card comes back every few turns for the rest of the combat, costing a draw each time.
+        const draws = e.zone === "hand" ? 1 : (Math.min(8, s.turnsLeft) * 5) / Math.max(10, s.deckSize);
+        const perDraw = e.card === "pager" ? 2 + 2 * s.wBlock : e.card === "configDrift" ? 5 : e.card === "techDebt" ? 2 : -2;
+        v -= e.count * draws * perDraw;
         break;
+      }
       case "choose":
         if (e.action === "decommission") v += Math.min(e.count, s.junkInHand) * 2.5;
         else v += { discard: 0.3, toHand: 3, toTopOfDraw: 1, upgrade: 2, retain: 1 }[e.action];
@@ -314,7 +320,8 @@ function combatSituation(run: RunState, c: CombatState, content: Content): Situa
     threat: 1 + 0.1 * (e.statuses.scaling ?? 0) + ((e.statuses.retries ?? 0) > 0 ? 0.3 : 0),
   }));
   // Serve the enemies that send the most per point of Load first: they cost the most to leave standing.
-  const pressure = living.map((e, i) => (foes[i].incoming + averageHit(content, e.id)) / 2 / Math.max(1, e.load));
+  const typicalHit = living.map((e, i) => (foes[i].incoming + averageHit(content, e.id)) / 2);
+  const pressure = living.map((e, i) => typicalHit[i] / Math.max(1, e.load));
   const meanPressure = pressure.reduce((a, b) => a + b, 0) / Math.max(1, pressure.length);
   foes.forEach((f, i) => (f.threat *= Math.min(1.8, Math.max(0.6, Math.sqrt(pressure[i] / Math.max(1e-6, meanPressure))))));
   const incoming = foes.reduce((sum, f) => sum + f.incoming, 0);
@@ -330,7 +337,8 @@ function combatSituation(run: RunState, c: CombatState, content: Content): Situa
   return {
     need: Math.max(0, incoming - c.capacity),
     wBlock: 1 + 1.2 * (1 - run.budget / run.maxBudget),
-    wLoad: Math.min(1.5, Math.max(0.35, incoming / SERVE_PER_TURN)),
+    // Judged on a typical turn, so a quiet turn doesn't make serving look pointless.
+    wLoad: Math.min(1.5, Math.max(0.35, typicalHit.reduce((a, b) => a + b, 0) / SERVE_PER_TURN)),
     turnsLeft: Math.min(8, Math.max(1, Math.ceil(totalLoad / 10))),
     engineers: c.engineers,
     foes,
@@ -350,6 +358,7 @@ function combatSituation(run: RunState, c: CombatState, content: Content): Situa
     latencyTurns: c.statuses.latency ?? 0,
     degraded: c.statuses.degraded ?? 0,
     intents: living.flatMap((e) => e.intent.kinds),
+    deckSize: allCards.length,
     junkInHand: c.hand.filter((h) => isJunk(content.cards[h.id])).length,
     failures: living.some((e) => enemyFails(content, e)) ? 0.4 : 0,
     pagers: allCards.filter((h) => h.id === "pager").length,
@@ -390,6 +399,7 @@ function typicalSituation(run: RunState, content: Content): Situation {
     latencyTurns: 0,
     degraded: 0,
     intents: ["attack"],
+    deckSize: run.deck.length,
     junkInHand: 0.3,
     failures: 0.1,
     // On-Call cards bring their own Pager.
@@ -504,7 +514,7 @@ function nodeValue(node: MapNode, run: RunState): number {
     case "incident":
       return health > 0.4 ? 1 : 0.3;
     case "major":
-      return health >= 0.75 ? 2.5 : health >= 0.55 ? 0.3 : -4;
+      return health >= 0.6 ? 2.5 : health >= 0.45 ? 0.3 : -4;
     case "retro":
       return health < 0.5 ? 3 : health < 0.75 ? 1.5 : 0.8;
     case "vendor":

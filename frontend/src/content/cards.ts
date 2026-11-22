@@ -66,7 +66,7 @@ const STARTERS: Def[] = [
   },
   {
     id: "triage", name: "Triage", pool: "taylor", rarity: "starter", type: "skill",
-    cost: 1, effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(5)],
+    cost: 0, effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(5)],
     upgrade: { effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(8)] },
     flavor: "Stop the bleeding, then file the ticket.",
   },
@@ -356,11 +356,6 @@ const TAYLOR: Def[] = [
     flavor: "Pizza, whiteboards, no windows.",
   },
   {
-    id: "defenseInDepth", name: "Defense in Depth", pool: "taylor", rarity: "uncommon", type: "power",
-    cost: 2, effects: [self("hardened", 2)], upgrade: { cost: 1 },
-    flavor: "Layers. Like an onion, or a firewall.",
-  },
-  {
     id: "capacityReservation", name: "Capacity Reservation", pool: "taylor", rarity: "uncommon", type: "skill",
     cost: 2, effects: [capacity(10), self("reserved", 2)], upgrade: { effects: [capacity(14), self("reserved", 2)] },
     flavor: "Booked well ahead, like a good dentist.",
@@ -388,12 +383,22 @@ const TAYLOR: Def[] = [
     flavor: "Calm voice. Shaking hands.",
   },
   {
+    id: "containBlastRadius", name: "Contain Blast Radius", pool: "taylor", rarity: "uncommon", type: "attack",
+    cost: 2, effects: [serve({ base: 6, per: 1, of: "capacity" })], upgrade: { effects: [serve({ base: 10, per: 1, of: "capacity" })] },
+    flavor: "Everything we held back, all at once.",
+  },
+  {
     id: "alertTuning", name: "Alert Tuning", pool: "taylor", rarity: "uncommon", type: "skill",
     cost: 1, effects: [{ op: "choose", from: "hand", count: 2, action: "decommission", optional: true }, draw(2)],
     upgrade: { cost: 0 },
     flavor: "Not every blip deserves a phone call.",
   },
   // rare
+  {
+    id: "defenseInDepth", name: "Defense in Depth", pool: "taylor", rarity: "rare", type: "power",
+    cost: 2, effects: [self("hardened", 2)], upgrade: { cost: 1 },
+    flavor: "Layers. Like an onion, or a firewall.",
+  },
   {
     id: "chaosEngineering", name: "Chaos Engineering", pool: "taylor", rarity: "rare", type: "power",
     cost: 2, effects: [infra("failover", 2), infra("healthChecks"), infra("autoRemediation"), capacity(6)], upgrade: { cost: 1 },
@@ -415,11 +420,6 @@ const TAYLOR: Def[] = [
     cost: 2, effects: [capacity(12), self("hardened", 1), self("reserved", 1)],
     upgrade: { effects: [capacity(16), self("hardened", 1), self("reserved", 1)] },
     flavor: "Rehearse the disaster so the real one bores you.",
-  },
-  {
-    id: "containBlastRadius", name: "Contain Blast Radius", pool: "taylor", rarity: "rare", type: "attack",
-    cost: 2, effects: [serve({ base: 6, per: 1, of: "capacity" })], upgrade: { effects: [serve({ base: 10, per: 1, of: "capacity" })] },
-    flavor: "Everything we held back, all at once.",
   },
 ];
 
