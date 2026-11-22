@@ -13,9 +13,9 @@ const LIST: RelicDef[] = [
   },
   {
     id: "postmortemCulture", name: "Postmortem Culture", rarity: "starter", pool: "taylor", icon: "book",
-    text: "After each combat, recover 4 Error Budget.",
+    text: "After each combat, recover 3 Error Budget.",
     flavor: "Every outage is a lesson. Some are long lessons.",
-    trigger: "combatEnd", effects: [{ op: "recover", amount: 4 }],
+    trigger: "combatEnd", effects: [{ op: "recover", amount: 3 }],
   },
 
   // ---------- common ----------

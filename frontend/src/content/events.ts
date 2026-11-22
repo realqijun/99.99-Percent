@@ -20,7 +20,7 @@ const LIST: EventDef[] = [
       {
         label: "Fix the root cause", detail: "Lose 6 Error Budget. Upgrade a card.",
         outcomes: [{ op: "budget", amount: -6 }, { op: "chooseCard", action: "upgrade" }],
-        requires: { budget: 7 },
+        requires: { budget: 6 },
         reply: "You're a hero. I'll tell them it's fixed for real.",
       },
       {
@@ -71,7 +71,7 @@ const LIST: EventDef[] = [
       {
         label: "Talk Alex down", detail: "Lose 5 Error Budget. Remove a card from your deck.",
         outcomes: [{ op: "budget", amount: -5 }, { op: "chooseCard", action: "remove" }],
-        requires: { budget: 6 },
+        requires: { budget: 5 },
         reply: "Fine. Focus. But I'm keeping the slide deck.",
       },
     ],
@@ -145,7 +145,7 @@ const LIST: EventDef[] = [
       {
         label: "Join the call", detail: "Lose 8 Error Budget. Gain a random rare card.",
         outcomes: [{ op: "budget", amount: -8 }, { op: "randomCard", rarity: "rare" }],
-        requires: { budget: 9 },
+        requires: { budget: 8 },
         reply: "They switched to lowercase by the end. Progress!",
       },
       {
@@ -189,7 +189,7 @@ const LIST: EventDef[] = [
       {
         label: "Push through", detail: "Lose 8 Error Budget. Upgrade a card.",
         outcomes: [{ op: "budget", amount: -8 }, { op: "chooseCard", action: "upgrade" }],
-        requires: { budget: 9 },
+        requires: { budget: 8 },
         reply: "Okay. At least finish the soup.",
       },
     ],
@@ -229,7 +229,7 @@ const LIST: EventDef[] = [
       {
         label: "Show the real graphs", detail: "Lose 12 Error Budget. Gain a random rare relic.",
         outcomes: [{ op: "budget", amount: -12 }, { op: "relic", rarity: "rare" }],
-        requires: { budget: 13 },
+        requires: { budget: 12 },
         reply: "Painful. But they approved the budget for real tooling.",
       },
     ],

@@ -3,7 +3,7 @@ import { byId } from "./byId";
 
 /*
  * Every encounter. Normal encounters may mix enemies from earlier acts.
- * Total Load targets per normal encounter: Act 1 12-50, Act 2 20-85, Act 3 30-120.
+ * Total Load targets per normal encounter: Act 1 12-55, Act 2 20-95, Act 3 30-120.
  */
 
 type Row = [id: string, act: Act, tier: Tier, enemies: string[], workload: Workload, weight?: number];

@@ -44,6 +44,7 @@ npm run dev        # http://localhost:5173
 | `npm run dev` | Run locally with hot reload |
 | `npm run lint` / `npm run typecheck` | oxlint and TypeScript |
 | `npm test` / `npm run test:coverage` | Vitest |
+| `npm run balance` | A bot plays seeded runs and checks the difficulty bands (about 45 s) |
 | `npm run test:e2e` | Build, then run the Playwright tests |
 | `npm run package:itch` | Build the zip to upload to itch.io |
 

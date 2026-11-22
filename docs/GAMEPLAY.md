@@ -25,7 +25,7 @@ Beating a boss restores Error Budget to full, then offers a choice of 3 boss rel
 | Character | Role | Error Budget | Starter relic | Plays around |
 | --- | --- | --- | --- | --- |
 | Jordan | Platform Engineer | 72 | Monitoring: draw 1 more card on turn 1, and see enemy intents 2 turns ahead | App Servers, Load Balancers, Autoscaling |
-| Taylor | Site Reliability Engineer | 70 | Postmortem Culture: recover 4 Error Budget after each combat | Health Checks, Failover, Pager control, recovery |
+| Taylor | Site Reliability Engineer | 70 | Postmortem Culture: recover 3 Error Budget after each combat | Health Checks, Failover, Pager control, recovery |
 
 Each character has their own card pool and also draws from the neutral pool.
 Caching and database cards are neutral, so both characters use them.

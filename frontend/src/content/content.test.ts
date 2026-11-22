@@ -148,6 +148,15 @@ describe("cards", () => {
     }
   });
 
+  it("has no free card that returns cards from the discard pile, so two copies can't loop forever", () => {
+    for (const card of playable) {
+      for (const stats of [card, { ...card, ...card.upgrade }]) {
+        const fetches = flatten(stats.effects).some((e) => e.op === "choose" && e.from === "discard" && e.action === "toHand");
+        if (fetches) expect(stats.cost, card.id).not.toBe(0);
+      }
+    }
+  });
+
   it("keeps flavour short", () => {
     for (const card of Object.values(cards)) if (card.flavor) expect(card.flavor.length, card.id).toBeLessThan(60);
   });
@@ -177,6 +186,22 @@ describe("enemies and encounters", () => {
     }
   });
 
+  it("only gains Retries in an opening, so Retries stop growing and a slow deck can still win", () => {
+    const repeating = (ai: EnemyAi): string[] => (ai.kind === "script" ? repeating(ai.then) : aiMoves(ai));
+    for (const enemy of Object.values(enemies)) {
+      for (const id of repeating(enemy.ai)) {
+        const retries = enemy.moves[id].effects.some((e) => e.op === "status" && e.status === "retries");
+        expect(retries, `${enemy.id}.${id}`).toBe(false);
+      }
+    }
+  });
+
+  it("gives every enemy an attack", () => {
+    for (const enemy of Object.values(enemies)) {
+      expect(Object.values(enemy.moves).some((m) => m.effects.some((e) => e.op === "hit")), enemy.id).toBe(true);
+    }
+  });
+
   it("only meets summon-only enemies through summons", () => {
     const summoned = Object.values(enemies).flatMap((e) => Object.values(e.moves).flatMap((m) => m.effects.flatMap((x) => (x.op === "summon" ? [x.enemy] : []))));
     expect(new Set(summoned)).toEqual(new Set(["trafficSpike", "shopperWave", "failingZone"]));
@@ -200,7 +225,7 @@ describe("enemies and encounters", () => {
   });
 
   it("keeps normal encounter Load near each act's target", () => {
-    const cap: Record<Act, number> = { 1: 50, 2: 90, 3: 130 };
+    const cap: Record<Act, number> = { 1: 55, 2: 95, 3: 130 };
     for (const enc of Object.values(encounters).filter((e) => e.tier === "normal")) {
       const max = enc.enemies.reduce((sum, id) => sum + enemies[id].load[1], 0);
       expect(max, enc.id).toBeLessThanOrEqual(cap[enc.act]);
@@ -263,7 +288,8 @@ describe("events", () => {
       for (const choice of event.choices) {
         for (const o of choice.outcomes) {
           if (o.op === "cash" && o.amount < 0) expect(choice.requires?.cash, `${event.id}: ${choice.label}`).toBeGreaterThanOrEqual(-o.amount);
-          if (o.op === "budget" && o.amount < 0) expect(choice.requires?.budget, `${event.id}: ${choice.label}`).toBeGreaterThan(-o.amount);
+          // A budget requirement of N means "more than N", so asking for exactly the cost keeps the SLA intact.
+          if (o.op === "budget" && o.amount < 0) expect(choice.requires?.budget, `${event.id}: ${choice.label}`).toBe(-o.amount);
         }
       }
     }
