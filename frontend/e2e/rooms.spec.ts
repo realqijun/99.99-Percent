@@ -25,6 +25,12 @@ test("the Vendor sells a card and removes one", async ({ page }) => {
   await expect(buy).toBeDisabled();
 
   const price = run.screen.shop.removalPrice;
+  // Backing out before picking a card refunds the removal.
+  await game.getByRole("button", { name: `Remove for ${price}` }).click();
+  await expect(game.getByLabel(`${400 - offer.price - price} cash`)).toBeVisible();
+  await game.getByRole("button", { name: `Cancel, refund ${price}` }).click();
+  await expect(game.getByText(`You have ${400 - offer.price} cash.`)).toBeVisible();
+
   await game.getByRole("button", { name: `Remove for ${price}` }).click();
   await expect(game.getByRole("heading", { name: "Remove a card" })).toBeVisible();
   await expect(game.getByRole("button", { name: "Remove", exact: true })).toBeDisabled();
@@ -68,6 +74,10 @@ test("a Retro rest recovers the amount it shows", async ({ page }) => {
 test("a Retro Refactor upgrades the chosen card, with a preview", async ({ page }) => {
   const game = await openGame(page, { storage: saved(atRetro("REFACTOR")) });
   await game.getByRole("button", { name: "Continue" }).click();
+  await game.getByRole("button", { name: /^Refactor/ }).click();
+  // Backing out leaves the Retro open, with Rest still on offer.
+  await game.getByRole("button", { name: "Back to the Retro" }).click();
+  await expect(game.getByRole("button", { name: /^Rest/ })).toBeVisible();
   await game.getByRole("button", { name: /^Refactor/ }).click();
 
   await expect(game.getByRole("heading", { name: "Refactor a card" })).toBeVisible();

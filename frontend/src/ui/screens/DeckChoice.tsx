@@ -1,7 +1,7 @@
 /* Pick a card from the deck outside combat: remove, upgrade (with a preview) or duplicate. */
 import { useState } from "react";
 import type { RunState } from "../../engine/types";
-import { cardText } from "../../engine";
+import { canCancelDeckChoice, cardText } from "../../engine";
 import { useGame } from "../../game/store";
 import { CardGrid } from "../CardGrid";
 import { sortCards } from "../cards";
@@ -16,7 +16,8 @@ export function DeckChoice({ run }: { run: RunState }) {
   const dispatch = useGame((s) => s.dispatch);
   const [uid, setUid] = useState<number | null>(null);
   if (run.screen.kind !== "deckChoice") return null;
-  const { action } = run.screen;
+  const { action, then } = run.screen;
+  const back = !canCancelDeckChoice(run) ? null : then.kind === "shop" ? `Cancel, refund ${then.shop.removalPrice}` : "Back to the Retro";
   const cards = sortCards(run.deck, content);
   const picked = run.deck.find((c) => c.uid === uid) ?? null;
   const def = picked ? cardDef(content, picked.id) : null;
@@ -30,6 +31,11 @@ export function DeckChoice({ run }: { run: RunState }) {
       <header className="screen-head">
         <h1>{TITLES[action]}</h1>
         <p className="muted">{picked && def ? `${def.name} selected.` : "Pick one card from your deck."}</p>
+        {back && (
+          <button type="button" className="btn btn--ghost" onClick={() => dispatch({ type: "cancel" })}>
+            {back}
+          </button>
+        )}
         <button type="button" className="btn" disabled={!picked} onClick={() => picked && dispatch({ type: "chooseCards", uids: [picked.uid] })}>
           {CONFIRM[action]}
         </button>
