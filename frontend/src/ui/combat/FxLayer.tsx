@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { cardTextOf } from "../../game/store";
+import { cardText } from "../../engine";
 import { CardView } from "../CardView";
 import { cardDef, useContent } from "../content";
 import type { FxItem } from "./useFx";
@@ -26,7 +26,7 @@ export function FxLayer({ items }: { items: FxItem[] }) {
         } as CSSProperties;
         return (
           <div key={item.id} className="fx-ghost" style={style}>
-            <CardView def={def} upgraded={item.card.upgraded} text={cardTextOf(def, item.card.upgraded)} />
+            <CardView def={def} upgraded={item.card.upgraded} text={cardText(def, item.card.upgraded, undefined, undefined, content)} />
           </div>
         );
       })}

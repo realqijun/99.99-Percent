@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../../App";
 import type { Command } from "../../engine/types";
 import { gameStore } from "../../game/store";
-import { FIXTURE_CONTENT, FIXTURES } from "../__fixtures__";
+import { FIXTURES } from "../__fixtures__";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -14,7 +14,7 @@ let sent: Command[];
 
 function show(fixture: string) {
   const f = FIXTURES[fixture];
-  gameStore.getState().loadFixture(structuredClone(f.run), f.trail);
+  gameStore.getState().loadFixture(structuredClone(f.run));
   sent = [];
   gameStore.setState({
     dispatch: vi.fn((cmd: Command) => {
@@ -25,15 +25,15 @@ function show(fixture: string) {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  act(() => root.render(<App content={FIXTURE_CONTENT} />));
+  act(() => root.render(<App />));
 }
 
-const button = (name: string | RegExp) => {
+const button = (name: string | RegExp, nth = 0) => {
   const all = [...host.querySelectorAll("button")];
-  const found = all.find((b) => {
+  const found = all.filter((b) => {
     const label = b.getAttribute("aria-label") ?? b.textContent ?? "";
     return typeof name === "string" ? label === name : name.test(label);
-  });
+  })[nth];
   if (!found) throw new Error(`No button ${name}`);
   return found;
 };
@@ -56,8 +56,9 @@ describe("combat", () => {
     click(card);
     expect(card.getAttribute("aria-pressed")).toBe("true");
     expect(sent).toEqual([]);
-    click(button(/^Target Bot Swarm/));
-    expect(sent).toEqual([{ type: "playCard", uid: hand()[0].uid, target: 1 }]);
+    const second = button(/^Target Bot Crawler/, 1);
+    click(second);
+    expect(sent).toEqual([{ type: "playCard", uid: hand()[0].uid, target: 2 }]);
   });
 
   it("plays an untargeted card on a second click", () => {
@@ -89,7 +90,7 @@ describe("combat", () => {
 
   it("won't pick a card it can't play, and says why", () => {
     show("combat-low-budget");
-    const burst = button(/^2: Burst Serve/);
+    const burst = button(/^2: Zero Downtime Deploy/);
     expect(burst.getAttribute("aria-disabled")).toBe("true");
     expect(burst.getAttribute("aria-label")).toContain("Not enough Engineers");
     click(burst);
@@ -108,7 +109,10 @@ describe("combat", () => {
   it("answers a pending choice", () => {
     show("combat-pending");
     const dialog = host.querySelector('[role="dialog"]')!;
-    expect(dialog.textContent).toContain("Choose a card to decommission");
+    expect(dialog.textContent).toContain("Choose a card to upgrade");
+    // Only cards that can still be upgraded are offered: not the upgraded Load Balancer+ or the card being played.
+    const offered = [...dialog.querySelectorAll(".card-btn")].map((b) => b.getAttribute("aria-label")!.split(",")[0]);
+    expect(offered).toEqual(["Serve", "Serve", "Provision", "Inspect"]);
     const confirm = button("Confirm");
     expect(confirm.disabled).toBe(true);
     click(dialog.querySelector(".card-btn")!);
@@ -121,9 +125,9 @@ describe("combat", () => {
 
   it("uses a targeted runbook from the top bar", () => {
     show("combat");
-    click(button("Runbook: Kill Switch"));
+    click(button("Runbook: Kill Query"));
     click(button("Use"));
-    click(button(/^Target Bot Swarm/));
+    click(button(/^Target Bot Crawler/));
     expect(sent).toEqual([{ type: "useRunbook", slot: 1, target: 1 }]);
   });
 });

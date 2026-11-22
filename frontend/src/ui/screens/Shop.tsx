@@ -1,6 +1,7 @@
 /* The Vendor: cards, relics and runbooks for cash, and a card removal service. */
 import type { RunState } from "../../engine/types";
-import { cardTextOf, useGame } from "../../game/store";
+import { cardText } from "../../engine";
+import { useGame } from "../../game/store";
 import { Icon } from "../art";
 import { baseCost, cardLabel } from "../cards";
 import { CardView } from "../CardView";
@@ -40,7 +41,7 @@ export function Shop({ run }: { run: RunState }) {
         <ul className="shop__cards">
           {shop.cards.map((item, i) => {
             const def = cardDef(content, item.card.id);
-            const text = cardTextOf(def, item.card.upgraded);
+            const text = cardText(def, item.card.upgraded, undefined, undefined, content);
             const reason = why(item.price, item.sold);
             return (
               <li key={item.card.uid}>
@@ -110,6 +111,7 @@ export function Shop({ run }: { run: RunState }) {
           >
             {shop.removalUsed ? "Done for this visit" : `Remove for ${shop.removalPrice}`}
           </button>
+          {!shop.removalUsed && shop.removalPrice > cash && <p className="bad small">Not enough cash</p>}
         </section>
       </div>
     </main>

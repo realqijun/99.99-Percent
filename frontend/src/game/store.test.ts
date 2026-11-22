@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommandResult, GameEvent, RunState } from "../engine/types";
+import { CONTENT } from "../content";
 import { FIXTURES } from "../ui/__fixtures__";
 
 const engine = vi.hoisted(() => ({
@@ -53,7 +54,7 @@ describe("dispatch", () => {
 
     expect(store.getState().dispatch({ type: "chooseNode", node: "f4c1" })).toBe(true);
 
-    expect(engine.applyCommand).toHaveBeenCalledWith(expect.objectContaining({ seed: next.seed }), { type: "chooseNode", node: "f4c1" });
+    expect(engine.applyCommand).toHaveBeenCalledWith(expect.objectContaining({ seed: next.seed }), { type: "chooseNode", node: "f4c1" }, CONTENT);
     expect(store.getState().run).toBe(next);
     expect(saved()).toEqual(next);
     expect(store.getState().events.map((q) => q.event)).toEqual(events);
@@ -137,11 +138,11 @@ describe("dispatch", () => {
 });
 
 describe("runs", () => {
-  it("starts a run with the tutorial until it is done", () => {
+  it("starts a run with the tutorial until it is done, with the typed seed in capitals", () => {
     const store = createGameStore();
     engine.newRun.mockReturnValue(mapRun());
     expect(store.getState().newRun({ character: "taylor", difficulty: 0, seed: " abc " })).toBe(true);
-    expect(engine.newRun).toHaveBeenCalledWith({ seed: "abc", character: "taylor", difficulty: 0, tutorial: true });
+    expect(engine.newRun).toHaveBeenCalledWith({ seed: "ABC", character: "taylor", difficulty: 0, tutorial: true }, CONTENT);
     expect(store.getState().view).toBe("game");
     expect(saved()?.seed).toBe(FIXTURES.map.run.seed);
   });
@@ -160,7 +161,7 @@ describe("runs", () => {
     const store = storeWith(mapRun());
     engine.applyCommand.mockReturnValue({ run: { ...mapRun(), screen: { kind: "summary" }, result: "lost" }, events: [{ type: "runLost" }] });
     store.getState().abandon();
-    expect(engine.applyCommand).toHaveBeenCalledWith(expect.anything(), { type: "abandon" });
+    expect(engine.applyCommand).toHaveBeenCalledWith(expect.anything(), { type: "abandon" }, CONTENT);
     expect(store.getState().profile.history).toHaveLength(1);
     store.getState().clearFinished();
     expect(store.getState().run).toBeNull();

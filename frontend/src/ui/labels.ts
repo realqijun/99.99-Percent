@@ -31,8 +31,8 @@ export const NODE_KINDS: Record<NodeKind, { name: string; text: string }> = {
 
 export const INTENTS: Record<IntentKind, string> = {
   attack: "Sends requests",
-  defend: "Gains Buffer",
-  buff: "Buffs itself",
+  defend: "Adds Buffer",
+  buff: "Buffs incidents",
   debuff: "Debuffs you",
   failure: "Node Failure: disables your infrastructure",
   summon: "Calls for backup",
@@ -40,8 +40,8 @@ export const INTENTS: Record<IntentKind, string> = {
 };
 
 export function intentText(intent: Intent): string {
-  const hit = intent.hit ? `${intent.hit.amount}${intent.hit.times > 1 ? ` x${intent.hit.times}` : ""} requests` : "";
-  return intent.kinds.map((k) => (k === "attack" && hit ? `${INTENTS.attack}: ${hit}` : INTENTS[k])).join(". ") || INTENTS.unknown;
+  const hit = intent.hit ? `Sends ${plural(intent.hit.amount, "request")}${intent.hit.times > 1 ? `, ${intent.hit.times} times` : ""}` : INTENTS.attack;
+  return intent.kinds.map((k) => (k === "attack" ? hit : INTENTS[k])).join(". ") || INTENTS.unknown;
 }
 
 export const STATUSES: Record<StatusId, { name: string; text: string; bad: boolean }> = {

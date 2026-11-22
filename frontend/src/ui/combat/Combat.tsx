@@ -4,7 +4,8 @@
  */
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { CombatState, RunState } from "../../engine/types";
-import { cantPlayOf, useGame } from "../../game/store";
+import { cantPlay } from "../../engine";
+import { useGame } from "../../game/store";
 import { Icon } from "../art";
 import { PileDialog } from "../CardGrid";
 import { sortCards } from "../cards";
@@ -50,7 +51,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
 
   const pick = (uid: number) => {
     if (!playerTurn) return;
-    const reason = cantPlayOf(run, uid, content);
+    const reason = cantPlay(run, uid, content);
     if (reason) return;
     const def = cardDef(content, combat.hand.find((c) => c.uid === uid)!.id);
     if (sel?.kind === "card" && sel.uid === uid) {
@@ -62,7 +63,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
   };
 
   const drop = (uid: number, enemy: number | undefined) => {
-    if (!playerTurn || cantPlayOf(run, uid, content)) return;
+    if (!playerTurn || cantPlay(run, uid, content)) return;
     const def = cardDef(content, combat.hand.find((c) => c.uid === uid)!.id);
     const s = { kind: "card", uid } as const;
     if (def.target !== "enemy") play(s);
@@ -83,7 +84,7 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
     if ((e.target as HTMLElement | null)?.closest?.("input, textarea, select")) return;
     if (/^[1-9]$/.test(e.key)) {
       const c = combat.hand[Number(e.key) - 1];
-      if (c && playerTurn && !cantPlayOf(run, c.uid, content)) onSelect({ kind: "card", uid: c.uid });
+      if (c && playerTurn && !cantPlay(run, c.uid, content)) onSelect({ kind: "card", uid: c.uid });
       e.preventDefault();
     } else if ((e.key === "Tab" || e.key.startsWith("Arrow")) && sel && needsTarget && alive.length > 0) {
       const back = e.key === "ArrowLeft" || e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey);
@@ -143,6 +144,9 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
             </span>
           </Tip>
           <span className="turn">Turn {combat.turn}</span>
+          <p className="combat__hint" aria-live="polite">
+            {sel && needsTarget ? `Pick a target for ${selName}. Enter plays, Esc cancels.` : sel ? `Click ${selName} again or press Enter to play it.` : ""}
+          </p>
         </div>
         <div className="enemies">
           {combat.enemies.map((e, i) => (
@@ -156,9 +160,6 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
             />
           ))}
         </div>
-        <p className="combat__hint" aria-live="polite">
-          {sel && needsTarget ? `Pick a target for ${selName}. Enter plays, Esc cancels.` : sel ? `Click ${selName} again or press Enter to play it.` : ""}
-        </p>
       </section>
 
       <div className="combat__bottom">
@@ -191,8 +192,8 @@ export function Combat({ run, combat, selection, onSelect }: { run: RunState; co
         </div>
       )}
       <FxLayer items={fx} />
-      {combat.tutorial !== null && !combat.pending && <Tutorial step={combat.tutorial} root={root} />}
-      {combat.pending && <ChoiceDialog key={JSON.stringify(combat.pending.source)} combat={combat} pending={combat.pending} />}
+      {combat.tutorial !== null && !combat.pending && <Tutorial step={combat.tutorial} handSize={combat.hand.length} />}
+      {combat.pending && <ChoiceDialog key={JSON.stringify(combat.pending.source)} run={run} combat={combat} pending={combat.pending} />}
       {shown && (
         <PileDialog
           title={shown.label}

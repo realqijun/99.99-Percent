@@ -1,21 +1,34 @@
 /* After a fight: rewards. Also the treasure room and the boss relic choice. */
 import { useState } from "react";
-import type { RewardItem, RunState } from "../../engine/types";
-import { cardTextOf, useGame } from "../../game/store";
+import type { Content, RewardItem, RunState } from "../../engine/types";
+import { cardText } from "../../engine";
+import { useGame } from "../../game/store";
 import { Icon } from "../art";
 import { cardLabel, baseCost } from "../cards";
 import { CardView } from "../CardView";
-import { cardDef, relicDef, runbookDef, useContent } from "../content";
+import { cardDef, enemyDef, relicDef, runbookDef, useContent } from "../content";
 import { Dialog } from "../Dialog";
 import { RelicTile } from "../Tiles";
 
-function rewardLabel(item: RewardItem, names: { relic: (id: string) => string; runbook: (id: string) => string }): string {
+function rewardLabel(item: RewardItem, content: Content): { name: string; text: string } {
   switch (item.kind) {
-    case "cash": return `${item.amount} cash`;
-    case "cards": return "Add a card to your deck";
-    case "relic": return `Relic: ${names.relic(item.relic)}`;
-    case "runbook": return `Runbook: ${names.runbook(item.runbook)}`;
+    case "cash": return { name: `${item.amount} cash`, text: "" };
+    case "cards": return { name: "Add a card to your deck", text: "" };
+    case "relic": return { name: `Relic: ${relicDef(content, item.relic).name}`, text: relicDef(content, item.relic).text };
+    case "runbook": return { name: `Runbook: ${runbookDef(content, item.runbook).name}`, text: runbookDef(content, item.runbook).text };
   }
+}
+
+/** What the fight was, for the line above the rewards. */
+function resolvedLine(run: RunState, content: Content): string | null {
+  const node = run.position ? run.map.nodes[run.position] : undefined;
+  if (node?.kind === "boss") {
+    const boss = content.encounters[run.map.boss]?.enemies[0];
+    return `${boss ? enemyDef(content, boss).name : "The boss"} is resolved. Error Budget restored.`;
+  }
+  if (node?.kind === "major") return "Major Incident resolved.";
+  if (node?.kind === "incident" || node?.kind === "event") return "Incident resolved.";
+  return null;
 }
 
 const REWARD_ICON = { cash: "cash", cards: "deck", relic: "tech-gear", runbook: "runbook" } as const;
@@ -26,7 +39,7 @@ export function Reward({ run }: { run: RunState }) {
   const [cardsAt, setCardsAt] = useState<number | null>(null);
   if (run.screen.kind !== "reward") return null;
   const items = run.screen.items;
-  const names = { relic: (id: string) => relicDef(content, id).name, runbook: (id: string) => runbookDef(content, id).name };
+  const resolved = resolvedLine(run, content);
   const open = cardsAt !== null ? items[cardsAt] : null;
   const fullRunbooks = run.runbooks.every(Boolean);
 
@@ -34,23 +47,28 @@ export function Reward({ run }: { run: RunState }) {
     <main className="room">
       <div className="room__panel panel">
         <h1>Rewards</h1>
+        {resolved && <p className="muted">{resolved}</p>}
         <ul className="rewards">
           {items.map((item, i) => {
-            const label = rewardLabel(item, names);
-            const icon = item.kind === "relic" ? (`tech-${relicDef(content, item.relic).icon}` as const) : REWARD_ICON[item.kind];
+            const { name, text } = rewardLabel(item, content);
+            const icon = item.kind === "relic" ? (`tech-${relicDef(content, item.relic).icon}` as const) : item.kind === "runbook" ? (`tech-${runbookDef(content, item.runbook).icon}` as const) : REWARD_ICON[item.kind];
+            const full = item.kind === "runbook" && !item.taken && fullRunbooks;
+            const status = item.taken ? "Taken" : full ? "Runbook slots full. Discard one from the top bar first." : "";
             return (
               <li key={i}>
                 <button
                   type="button"
                   className={`reward${item.taken ? " is-taken" : ""}`}
-                  disabled={item.taken}
+                  disabled={item.taken || full}
                   onClick={() => (item.kind === "cards" ? setCardsAt(i) : dispatch({ type: "takeReward", index: i }))}
-                  aria-label={item.taken ? `${label}, taken` : label}
+                  aria-label={[name, text, status].filter(Boolean).join(". ")}
                 >
                   <Icon name={icon} size={24} />
-                  <span>{label}</span>
-                  {item.kind === "runbook" && !item.taken && fullRunbooks && <span className="muted small">Slots full</span>}
-                  {item.taken && <span className="muted small">Taken</span>}
+                  <span className="reward__body">
+                    <span className="reward__name">{name}</span>
+                    {text && <span className="reward__text">{text}</span>}
+                    {status && <span className="reward__status">{status}</span>}
+                  </span>
                 </button>
               </li>
             );
@@ -67,7 +85,7 @@ export function Reward({ run }: { run: RunState }) {
           <ul className="choice-row">
             {open.choices.map((c, i) => {
               const def = cardDef(content, c.id);
-              const text = cardTextOf(def, c.upgraded);
+              const text = cardText(def, c.upgraded, undefined, undefined, content);
               return (
                 <li key={c.uid}>
                   <button
@@ -136,7 +154,7 @@ export function BossRelic({ run }: { run: RunState }) {
     <main className="room">
       <div className="room__panel room__panel--wide panel">
         <h1>Pick a boss relic</h1>
-        <p className="muted">Strong, and some come with a cost. You can take one.</p>
+        <p className="muted">Strong, and some come with a cost. Take one, or skip them all.</p>
         <ul className="boss-relics">
           {run.screen.choices.map((id, i) => (
             <li key={id}>
@@ -146,6 +164,11 @@ export function BossRelic({ run }: { run: RunState }) {
             </li>
           ))}
         </ul>
+        <div className="row row--end">
+          <button type="button" className="btn btn--ghost" onClick={() => dispatch({ type: "leave" })}>
+            Skip
+          </button>
+        </div>
       </div>
     </main>
   );

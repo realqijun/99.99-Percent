@@ -3,8 +3,9 @@
  * All rules come from the engine; this file only sequences commands, saving and sound.
  */
 import { createStore, useStore } from "zustand";
-import { applyCommand, cantPlay, cardText, costNow, newRun as engineNewRun, reachableNodes } from "../engine";
-import type { CardDef, CharacterId, CombatState, Command, Content, Difficulty, Effect, GameEvent, RunState } from "../engine/types";
+import { CONTENT } from "../content";
+import { applyCommand, newRun as engineNewRun } from "../engine";
+import type { CharacterId, Command, Difficulty, GameEvent, RunState } from "../engine/types";
 import { cueFor, playCue, setTrack, setVolumes, type Cue, type Track } from "./audio";
 import * as storage from "./storage";
 import type { Profile, Settings } from "./storage";
@@ -37,8 +38,6 @@ export interface GameState {
   brokenSave: boolean;
   /** False for dev fixtures, which must never overwrite a real save. */
   persist: boolean;
-  /** Map nodes visited this act, oldest first. Kept for this session only; after a reload it holds just the current node. */
-  trail: string[];
 
   newRun(options: { character: CharacterId; difficulty: Difficulty; seed?: string }): boolean;
   dispatch(command: Command): boolean;
@@ -50,7 +49,7 @@ export interface GameState {
   dismissError(id: number): void;
   exportBrokenSave(): void;
   /** Dev only: show a hand-made run without saving it. */
-  loadFixture(run: RunState, trail?: string[]): void;
+  loadFixture(run: RunState): void;
 }
 
 function message(e: unknown): string {
@@ -78,12 +77,6 @@ function recordEnd(profile: Profile, run: RunState): Profile {
   const unlocked = { ...profile.unlocked };
   if (run.result === "won") unlocked[run.character] = Math.max(unlocked[run.character], Math.min(3, run.difficulty + 1)) as Difficulty;
   return { ...profile, unlocked, history: [record, ...profile.history].slice(0, storage.HISTORY_LIMIT) };
-}
-
-function nextTrail(trail: string[], prev: RunState | null, next: RunState): string[] {
-  if (!prev || prev.act !== next.act || next.position === null) return next.position ? [next.position] : [];
-  if (next.position === prev.position) return trail;
-  return [...trail, next.position];
 }
 
 function playCues(events: GameEvent[]): void {
@@ -141,7 +134,7 @@ export function createGameStore() {
       if (prev && inTutorial(prev) && !inTutorial(next) && !nextProfile.tutorialDone) nextProfile = { ...nextProfile, tutorialDone: true };
       if (nextProfile !== profile && persist) storage.saveProfile(nextProfile);
       const queued = events.map((event) => ({ id: nextId++, event }));
-      set({ run: next, profile: nextProfile, trail: nextTrail(get().trail, prev, next), events: [...get().events, ...queued].slice(-EVENT_LIMIT) });
+      set({ run: next, profile: nextProfile, events: [...get().events, ...queued].slice(-EVENT_LIMIT) });
       playCues(events);
       syncTrack(get().view, next);
     };
@@ -155,12 +148,12 @@ export function createGameStore() {
       error: null,
       brokenSave: loaded.broken || storage.readBrokenSave() !== null,
       persist: true,
-      trail: loaded.run?.position ? [loaded.run.position] : [],
 
       newRun({ character, difficulty, seed }) {
         let run: RunState;
         try {
-          run = engineNewRun({ seed: seed?.trim() || randomSeed(), character, difficulty, tutorial: !get().profile.tutorialDone });
+          // Seeds are shown in capitals, so typed ones are case-insensitive.
+          run = engineNewRun({ seed: seed?.trim().toUpperCase() || randomSeed(), character, difficulty, tutorial: !get().profile.tutorialDone }, CONTENT);
         } catch (e) {
           fail(`Couldn't start the run: ${message(e)}`);
           return false;
@@ -175,7 +168,7 @@ export function createGameStore() {
         if (!run) return false;
         let result;
         try {
-          result = applyCommand(run, command);
+          result = applyCommand(run, command, CONTENT);
         } catch (e) {
           fail(`Something went wrong: ${message(e)}`);
           return false;
@@ -194,7 +187,7 @@ export function createGameStore() {
         if (dispatch({ type: "abandon" })) return;
         // The engine couldn't end it; drop the run so the player is never stuck.
         if (persist) storage.saveRun(null);
-        set({ run: null, view: "title", error: null, trail: [] });
+        set({ run: null, view: "title", error: null });
         syncTrack("title", null);
       },
 
@@ -202,7 +195,7 @@ export function createGameStore() {
         const { run, persist } = get();
         if (!run?.result) return;
         if (persist) storage.saveRun(null);
-        set({ run: null, view: "title", events: [], trail: [] });
+        set({ run: null, view: "title", events: [] });
         syncTrack("title", null);
       },
 
@@ -244,8 +237,8 @@ export function createGameStore() {
         }
       },
 
-      loadFixture(run, trail) {
-        set({ run, view: "game", persist: false, events: [], trail: trail ?? (run.position ? [run.position] : []) });
+      loadFixture(run) {
+        set({ run, view: "game", persist: false, events: [] });
         syncTrack("game", run);
       },
     };
@@ -256,83 +249,4 @@ export const gameStore = createGameStore();
 
 export function useGame<T>(selector: (state: GameState) => T): T {
   return useStore(gameStore, selector);
-}
-
-// ---------- engine helpers ----------
-// The UI asks the engine for card text, costs, playability and reachable nodes.
-// Each call has a plain fallback so the screens still render if the engine throws.
-
-function amountText(amount: Extract<Effect, { op: "capacity" }>["amount"]): string {
-  return typeof amount === "number" ? String(amount) : `${amount.base ?? 0} + ${amount.per} per ${amount.of}`;
-}
-
-function effectText(e: Effect): string {
-  switch (e.op) {
-    case "serve": return `Serve ${amountText(e.amount)}${e.times && e.times > 1 ? ` x${e.times}` : ""}${e.target === "allEnemies" ? " to all" : ""}.`;
-    case "capacity": return `Gain ${amountText(e.amount)} Capacity.`;
-    case "reject": return `Reject ${amountText(e.amount)}.`;
-    case "draw": return `Draw ${e.amount}.`;
-    case "engineers": return `Gain ${e.amount} Engineers.`;
-    case "recover": return `Recover ${amountText(e.amount)} Error Budget.`;
-    case "loseBudget": return `Lose ${e.amount} Error Budget.`;
-    case "status": return `Apply ${e.amount} ${e.status}.`;
-    case "removeStatus": return `Remove ${e.status}.`;
-    case "infra": return `Install ${e.infra}.`;
-    case "repair": return "Repair all infrastructure.";
-    case "warmCache": return `Warm the cache by ${e.amount}.`;
-    case "addCard": return `Add ${e.count} ${e.card} to ${e.zone}.`;
-    case "choose": return `Choose ${e.count} card to ${e.action}.`;
-    case "reveal": return `Reveal intents ${e.turns} turns ahead.`;
-    case "cash": return `Gain ${e.amount} cash.`;
-    case "if": return e.then.map(effectText).join(" ");
-  }
-}
-
-export function cardTextOf(card: CardDef, upgraded: boolean, combat?: CombatState, target?: number): string {
-  try {
-    return cardText(card, upgraded, combat, target);
-  } catch {
-    const stats = upgraded ? { ...card, ...card.upgrade } : card;
-    const keywords = (stats.keywords ?? []).map((k) => k[0].toUpperCase() + k.slice(1) + ".");
-    return [...keywords, ...stats.effects.map(effectText)].join(" ");
-  }
-}
-
-export function cantPlayOf(run: RunState, uid: number, content?: Content): string | null {
-  try {
-    return cantPlay(run, uid, content);
-  } catch {
-    if (run.screen.kind !== "combat") return "Not in combat";
-    const combat = run.screen.combat;
-    const card = combat.hand.find((c) => c.uid === uid);
-    const def = card && content?.cards[card.id];
-    if (!card || !def) return "Not in hand";
-    const cost = costOf(run, uid, content);
-    if (cost === null) return "Unplayable";
-    if (typeof cost === "number" && cost > combat.engineers) return "Not enough Engineers";
-    return null;
-  }
-}
-
-export function costOf(run: RunState, uid: number, content?: Content): number | "x" | null {
-  try {
-    return costNow(run, uid, content);
-  } catch {
-    if (run.screen.kind !== "combat") return null;
-    const card = run.screen.combat.hand.find((c) => c.uid === uid);
-    const def = card && content?.cards[card.id];
-    if (!card || !def) return null;
-    return card.upgraded && def.upgrade?.cost !== undefined ? def.upgrade.cost : def.cost;
-  }
-}
-
-export function reachableOf(run: RunState): string[] {
-  try {
-    return reachableNodes(run);
-  } catch {
-    const nodes = Object.values(run.map.nodes);
-    if (run.screen.kind !== "map") return [];
-    if (run.position === null) return nodes.filter((n) => n.floor === 1).map((n) => n.id);
-    return run.map.nodes[run.position]?.next ?? [];
-  }
 }

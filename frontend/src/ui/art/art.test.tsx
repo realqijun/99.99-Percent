@@ -49,9 +49,10 @@ describe("art data", () => {
 
 describe("Sprite", () => {
   it("renders a labelled image of merged runs", () => {
-    const svg = render(<Sprite name="launchDay" size={64} />);
+    const svg = render(<Sprite name="launchDay" size={64} label="Launch Day" />);
     expect(svg.getAttribute("role")).toBe("img");
-    expect(svg.getAttribute("aria-label")).toBe("launchDay");
+    expect(svg.getAttribute("aria-label")).toBe("Launch Day");
+    expect(render(<Sprite name="launchDay" />).getAttribute("aria-hidden")).toBe("true");
     expect(svg.getAttribute("width")).toBe("64");
     expect(svg.getAttribute("shape-rendering")).toBe("crispEdges");
     const runs = SPRITES.launchDay.reduce((n, row) => n + row.replace(/(.)\1*/g, "$1").replace(/\./g, "").length, 0);
@@ -59,11 +60,11 @@ describe("Sprite", () => {
   });
 
   it("draws the placeholder for unknown names", () => {
-    const unknown = render(<Sprite name="noSuchEnemy" />);
-    const placeholder = render(<Sprite name="toString" />);
-    expect(unknown.getAttribute("aria-label")).toBe("noSuchEnemy");
+    const unknown = render(<Sprite name="noSuchEnemy" label="Mystery" />);
+    const placeholder = render(<Sprite name="toString" label="Mystery" />);
+    expect(unknown.getAttribute("aria-label")).toBe("Mystery");
     expect(unknown.innerHTML).toBe(placeholder.innerHTML);
-    expect(unknown.innerHTML).not.toBe(render(<Sprite name="trafficSpike" />).innerHTML);
+    expect(unknown.innerHTML).not.toBe(render(<Sprite name="trafficSpike" label="Mystery" />).innerHTML);
     expect(unknown.querySelectorAll("rect").length).toBeGreaterThan(0);
   });
 });

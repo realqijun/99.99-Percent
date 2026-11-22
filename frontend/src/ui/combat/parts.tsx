@@ -5,8 +5,11 @@ import { enemyDef, useContent } from "../content";
 import { INFRA, STATUSES, intentText, portrait } from "../labels";
 import { Tip } from "../Tip";
 
+/** The attack, with its numbers, leads; the move's other kinds follow as small icons. */
 function IntentBadge({ intent, small = false }: { intent: Intent; small?: boolean }) {
-  const kind = intent.kinds[0] ?? "unknown";
+  const kinds = intent.kinds.length > 0 ? intent.kinds : (["unknown"] as const);
+  const kind = intent.hit ? "attack" : kinds[0];
+  const others = kinds.filter((k) => k !== kind);
   return (
     <span className={`intent-badge intent-badge--${kind}${small ? " intent-badge--small" : ""}`}>
       <Icon name={`intent-${kind}`} size={small ? 16 : 26} />
@@ -16,6 +19,9 @@ function IntentBadge({ intent, small = false }: { intent: Intent; small?: boolea
           {intent.hit.times > 1 && <small>x{intent.hit.times}</small>}
         </span>
       )}
+      {others.map((k) => (
+        <Icon key={k} name={`intent-${k}`} size={small ? 12 : 18} />
+      ))}
     </span>
   );
 }
@@ -137,6 +143,7 @@ export function EnemyView({
 }) {
   const content = useContent();
   const def = enemyDef(content, enemy.id);
+  const moveName = (intent: Intent) => def.moves[intent.move]?.name ?? intent.move;
   const describe = `${def.name}, Load ${enemy.load} of ${enemy.maxLoad}${enemy.buffer ? `, Buffer ${enemy.buffer}` : ""}`;
   const cls = ["enemy", enemy.resolved && "is-resolved", targetable && "is-targetable", isTarget && "is-target"].filter(Boolean).join(" ");
   return (
@@ -144,13 +151,13 @@ export function EnemyView({
       <div className="enemy__intent" data-tutorial={first ? "intent" : undefined}>
         {!enemy.resolved && (
           <>
-            <Tip content={<><strong>Next: {def.moves[enemy.intent.move]?.name ?? enemy.intent.move}</strong><span>{intentText(enemy.intent)}</span></>}>
-              <span className="intent" tabIndex={0} role="img" aria-label={`Intent: ${intentText(enemy.intent)}`}>
+            <Tip content={<><strong>Next: {moveName(enemy.intent)}</strong><span>{intentText(enemy.intent)}</span></>}>
+              <span className="intent" tabIndex={0} role="img" aria-label={`Intent: ${moveName(enemy.intent)}. ${intentText(enemy.intent)}`}>
                 <IntentBadge intent={enemy.intent} />
               </span>
             </Tip>
             {enemy.upcoming.length > 0 && (
-              <ol className="intent__next" aria-label={`Then: ${enemy.upcoming.map(intentText).join("; ")}`}>
+              <ol className="intent__next" aria-label={`Then: ${enemy.upcoming.map((u) => `${moveName(u)}. ${intentText(u)}`).join("; ")}`}>
                 {enemy.upcoming.map((u, i) => (
                   <li key={i} aria-hidden="true">
                     <IntentBadge intent={u} small />
