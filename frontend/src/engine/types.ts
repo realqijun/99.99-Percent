@@ -313,6 +313,8 @@ export interface EnemyState {
   upcoming: Intent[];
   history: string[];
   resolved: boolean;
+  /** Engine bookkeeping for `phases` AI: the active phase and the history length when it began. */
+  phase?: { index: number; since: number };
 }
 
 export interface PendingChoice {
@@ -351,6 +353,8 @@ export interface CombatState {
   nextEnemyKey: number;
   /** Tutorial step while the guided first combat runs, else null. */
   tutorial: number | null;
+  /** Hand cards picked by a `retain` choice; they stay in hand at the end of this turn. */
+  retained?: number[];
 }
 
 // ---------- map ----------
@@ -430,6 +434,8 @@ export interface RunState {
   map: ActMap;
   /** Current node, or null before the first move of an act. */
   position: string | null;
+  /** Node ids visited in the current act, in order. */
+  path: string[];
   budget: number;
   maxBudget: number;
   cash: number;
@@ -444,6 +450,8 @@ export interface RunState {
   seenEvents: string[];
   stats: RunStats;
   result: "won" | "lost" | null;
+  /** True until the first Incident starts; that combat runs the guided tutorial. */
+  tutorial?: boolean;
 }
 
 // ---------- commands and events ----------
@@ -478,7 +486,7 @@ export type GameEvent =
   | { type: "turnStart"; turn: number }
   | { type: "draw"; uids: number[] }
   | { type: "shuffle" }
-  | { type: "cardPlayed"; uid: number; card: string }
+  | { type: "cardPlayed"; uid: number; card: string; upgraded: boolean }
   | { type: "cardDecommissioned"; uid: number }
   | { type: "serve"; enemy: number; amount: number; absorbed: number }
   | { type: "capacity"; amount: number }
