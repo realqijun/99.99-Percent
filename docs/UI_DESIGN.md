@@ -25,15 +25,19 @@ The code is in `frontend/src/ui/`, the styles in `frontend/src/ui/ui.css` and `f
 - Combat: you and your infrastructure on the left, incidents in the middle, the hand fanned along the bottom, Engineers and the draw pile bottom left, End turn and the other piles bottom right.
 - Dialogs, tooltips and the error toast render inside the stage so they scale with it.
 - The UI shows only engine state.
-  Card text, costs, playability and reachable nodes come from the engine through the helpers in `game/store.ts`.
+  Card text, costs, playability, reachable nodes, choice candidates, event requirements and the Retro amount come from the engine's API in `engine/index.ts`.
 - Animation comes from the store's event queue, 100-350 ms per effect, halved on Fast, and off with Reduce motion.
 
 ## Review checklist
 
 Run `npm run dev` and open each fixture with `?screen=<name>` (the list is in `src/ui/__fixtures__/runs.ts`; `?screen=title` shows the title).
-Check each at 1280x720 and inside a 960x540 iframe.
+The fixtures are real runs built with the engine and the game's content, so names and card text are the real ones.
+`?gallery` shows every sprite and icon.
+In dev, `debug.help()` in the console lists helpers that jump a real run ahead, such as `debug.floor(15)` before a boss or `debug.next("vendor")`.
+None of this is in the build.
+Check each screen at 1280x720 and inside a 960x540 iframe.
 
-- Nothing overlaps, clips or runs off the stage, including the longest names (about 22 characters) and a 10-card hand.
+- Nothing overlaps, clips or runs off the stage, including the longest names (about 22 characters), the longest card text, a 10-card hand, five enemies (`combat-five`) and a full infrastructure list.
 - Text is readable at 960x540: body text at least 13px at design size, numbers in Source Sans.
 - Every control has an accessible name, a visible focus ring and works from the keyboard.
 - Dialogs are labelled by their title, trap focus and close with Esc unless they must be answered.
