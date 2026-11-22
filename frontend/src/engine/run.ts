@@ -158,13 +158,21 @@ function enterNode(run: RunState, nodeId: string, content: Content, events: Game
   }
 }
 
-function eventChoice(run: RunState, index: number, content: Content, events: GameEvent[]): string | null {
+/** Why an event choice can't be made now, or null if it can. A choice needing N budget needs more than N. */
+export function eventChoiceBlocked(run: RunState, index: number, content: Content): string | null {
   if (run.screen.kind !== "event" || run.screen.chosen !== null) return "No choice to make";
+  const choice = content.events[run.screen.event]?.choices[index];
+  if (!choice) return "No such choice";
+  if (choice.requires?.cash !== undefined && run.cash < choice.requires.cash) return `Needs ${choice.requires.cash} cash`;
+  if (choice.requires?.budget !== undefined && run.budget <= choice.requires.budget) return `Needs more than ${choice.requires.budget} Error Budget`;
+  return null;
+}
+
+function eventChoice(run: RunState, index: number, content: Content, events: GameEvent[]): string | null {
+  const blocked = eventChoiceBlocked(run, index, content);
+  if (blocked || run.screen.kind !== "event") return blocked ?? "No choice to make";
   const event = content.events[run.screen.event];
   const choice = event.choices[index];
-  if (!choice) return "No such choice";
-  if (choice.requires?.cash !== undefined && run.cash < choice.requires.cash) return "Not enough cash";
-  if (choice.requires?.budget !== undefined && run.budget <= choice.requires.budget) return "Not enough Error Budget";
   const screen: Screen = { kind: "event", event: event.id, chosen: index };
   run.screen = screen;
   let deckChoice: "remove" | "upgrade" | "duplicate" | null = null;

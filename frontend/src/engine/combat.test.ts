@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { settleCombat } from "./combat";
-import { applyCommand, cantPlay, costNow } from "./index";
+import { applyCommand, cantPlay, choiceCards, costNow } from "./index";
 import { apply, combat, enemyKeys, FIXTURE, force, inCombat, ofType, setHand } from "./__fixtures__/helpers";
 import type { InfraId, RunState, Statuses } from "./types";
 
@@ -252,6 +252,17 @@ describe("choices", () => {
     next = endTurn(next).run;
     expect(combat(next).hand.map((h) => h.uid)).toContain(cc);
     expect(combat(next).retained).toBeUndefined();
+  });
+
+  it("lists the cards a pending choice can pick: not the source, and only upgradable ones for an upgrade", () => {
+    const { run } = arena();
+    const [polish, serve, debt, done] = setHand(run, ["polish", "serve", "techDebt", "serve"]);
+    combat(run).hand[3].upgraded = true;
+    expect(choiceCards(run)).toEqual([]);
+    const paused = play(run, polish).run;
+    expect(choiceCards(paused, FIXTURE).map((h) => h.uid)).toEqual([serve]);
+    expect(applyCommand(paused, { type: "chooseCards", uids: [debt] }, FIXTURE).error).toBe("Invalid choice");
+    expect(applyCommand(paused, { type: "chooseCards", uids: [done] }, FIXTURE).error).toBe("Invalid choice");
   });
 
   it("works for runbooks too", () => {

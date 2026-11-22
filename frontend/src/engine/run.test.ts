@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, newRun, reachableNodes, retroRecoverAmount } from "./index";
+import { applyCommand, cantChoose, newRun, reachableNodes, retroRecoverAmount } from "./index";
 import { BOSS_NODE, FLOORS } from "./map";
 import { cardChoices, combatRewards, makeShop } from "./rewards";
 import { rand } from "./rng";
@@ -337,6 +337,15 @@ describe("events", () => {
     expect(applyCommand(at("coffeeChat", (r) => (r.budget = 6)), { type: "eventChoice", index: 1 }, FIXTURE).error).toBeUndefined();
     expect(applyCommand(at("coffeeChat", (r) => (r.cash = 39)), { type: "eventChoice", index: 2 }, FIXTURE).error).toBeTruthy();
     expect(applyCommand(at("coffeeChat", (r) => (r.cash = 40)), { type: "eventChoice", index: 2 }, FIXTURE).error).toBeUndefined();
+  });
+
+  it("says why a choice can't be made, matching what eventChoice refuses", () => {
+    expect(cantChoose(at("coffeeChat", (r) => (r.budget = 5)), 1, FIXTURE)).toBe("Needs more than 5 Error Budget");
+    expect(cantChoose(at("coffeeChat", (r) => (r.budget = 6)), 1, FIXTURE)).toBeNull();
+    expect(cantChoose(at("coffeeChat", (r) => (r.cash = 39)), 2, FIXTURE)).toBe("Needs 40 cash");
+    expect(cantChoose(at("coffeeChat", (r) => (r.cash = 40)), 2, FIXTURE)).toBeNull();
+    expect(cantChoose(at("coffeeChat"), 9, FIXTURE)).toBe("No such choice");
+    expect(cantChoose(fixtureRun(), 0, FIXTURE)).toBe("No choice to make");
   });
 
   it("resolves every kind of outcome", () => {
