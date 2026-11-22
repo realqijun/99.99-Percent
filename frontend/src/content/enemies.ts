@@ -2,8 +2,8 @@ import type { EnemyDef, EnemyEffect, EnemyStatusId, PlayerStatusId } from "../en
 import { byId } from "./byId";
 
 /*
- * Every enemy. Load targets: Act 1 normal 12-50, elites 75-110, boss about 240;
- * Act 2 about 1.7x and Act 3 about 2.4x. `sprite` always equals the id.
+ * Every enemy. Load targets: Act 1 normal 12-46, elites 78-98, boss about 110;
+ * Act 2 about 1.6x and Act 3 about 2x. `npm run balance` checks the numbers. `sprite` always equals the id.
  */
 
 // ---------- effect helpers ----------
