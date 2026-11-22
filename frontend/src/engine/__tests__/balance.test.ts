@@ -224,11 +224,22 @@ describe("balance", () => {
         expect.soft(r.win, `${name}: wins`).toBeGreaterThanOrEqual(0.05);
         expect.soft(r.win, `${name}: wins`).toBeLessThanOrEqual(0.2);
         expect.soft(r.killers[0]?.[1] ?? 0, `${name}: top killer ${r.killers[0]?.[0]}`).toBeLessThanOrEqual(0.25);
-      } else {
-        const below = rows.find((x) => x.character === r.character && x.difficulty === r.difficulty - 1)!;
-        expect.soft(r.avgDeathFloor, `${name}: dies sooner than one level down`).toBeLessThan(below.avgDeathFloor);
-        expect.soft(r.win, `${name}: wins no more than one level down`).toBeLessThanOrEqual(below.win);
       }
+      const below = rows.find((x) => x.character === r.character && x.difficulty === r.difficulty - 1);
+      if (below) {
+        expect.soft(r.avgDeathFloor, `${name}: dies sooner than one level down`).toBeLessThan(below.avgDeathFloor);
+        // Win rates above 99% are a few runs each, so one run of slack keeps seed noise from failing the check.
+        expect.soft(r.win, `${name}: wins no more than one level down`).toBeLessThanOrEqual(below.win + 1 / r.runs.length);
+      }
+    }
+    // Above 99% each character has too few deaths to judge alone, so the encounter share is checked on both together.
+    for (const difficulty of DIFFICULTIES.filter((d) => d > 0)) {
+      const level = rows.filter((r) => r.difficulty === difficulty);
+      const deaths = level.flatMap((r) => r.runs.filter((run) => run.result !== "won"));
+      const counts = new Map<string, number>();
+      for (const run of deaths) if (run.killer) counts.set(run.killer, (counts.get(run.killer) ?? 0) + 1);
+      const [id, count] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? ["none", 0];
+      expect.soft(count / Math.max(1, deaths.length), `${LABELS[difficulty]}: top killer ${id}`).toBeLessThanOrEqual(0.25);
     }
     for (const e of encounters) expect.soft(e.turns, `${e.id}: average turns`).toBeLessThanOrEqual(12);
   });

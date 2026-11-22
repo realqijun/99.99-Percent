@@ -66,8 +66,8 @@ const STARTERS: Def[] = [
   },
   {
     id: "triage", name: "Triage", pool: "taylor", rarity: "starter", type: "skill",
-    cost: 0, effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(4)],
-    upgrade: { effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(7)] },
+    cost: 0, effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(3)],
+    upgrade: { effects: [{ op: "removeStatus", status: "debuffs", target: "self" }, capacity(6)] },
     flavor: "Stop the bleeding, then file the ticket.",
   },
 ];
@@ -170,7 +170,7 @@ const JORDAN: Def[] = [
   // uncommon
   {
     id: "autoscaler", name: "Autoscaler", pool: "jordan", rarity: "uncommon", type: "power",
-    cost: 1, effects: [infra("autoscaler")], upgrade: { effects: [infra("autoscaler"), capacity(5)] },
+    cost: 1, effects: [infra("autoscaler"), capacity(3)], upgrade: { effects: [infra("autoscaler"), capacity(6)] },
     flavor: "Scales up in seconds. Scales down never.",
   },
   {
@@ -185,7 +185,7 @@ const JORDAN: Def[] = [
   },
   {
     id: "elasticCapacity", name: "Elastic Capacity", pool: "jordan", rarity: "uncommon", type: "skill",
-    cost: "x", effects: [capacity(6)], upgrade: { effects: [capacity(8)] },
+    cost: "x", effects: [capacity(7)], upgrade: { effects: [capacity(9)] },
     flavor: "Stretch now, invoice later.",
   },
   {
@@ -212,7 +212,7 @@ const JORDAN: Def[] = [
   },
   {
     id: "overprovision", name: "Overprovision", pool: "jordan", rarity: "uncommon", type: "skill",
-    cost: 2, effects: [capacity(14)], upgrade: { effects: [capacity(18)] },
+    cost: 2, effects: [capacity(16)], upgrade: { effects: [capacity(21)] },
     flavor: "Finance will find out next quarter.",
   },
   {

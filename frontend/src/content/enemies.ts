@@ -26,7 +26,7 @@ const LIST: Def[] = [
   {
     id: "trafficSpike", name: "Traffic Spike", tier: "normal", load: [12, 15],
     moves: {
-      surge: { name: "Surge", effects: [hit(7)] },
+      surge: { name: "Surge", effects: [hit(8)] },
       doubleTap: { name: "Double Tap", effects: [hit(4, 2)] },
       rampUp: { name: "Ramp Up", effects: [hit(4), onSelf("scaling", 1)] },
     },
@@ -37,7 +37,7 @@ const LIST: Def[] = [
     id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [18, 22],
     moves: {
       crawl: { name: "Crawl Every Page", effects: [hit(4, 3)] },
-      scrape: { name: "Scrape", effects: [hit(7), onPlayer("degraded", 1)] },
+      scrape: { name: "Scrape", effects: [hit(8), onPlayer("degraded", 1)] },
       spoof: { name: "Spoof User Agent", effects: [buffer(7)] },
     },
     ai: { kind: "weighted", weights: { crawl: 2, scrape: 2, spoof: 1 }, maxRepeat: 1 },
@@ -66,7 +66,7 @@ const LIST: Def[] = [
     id: "coldStart", name: "Cold Start", tier: "normal", load: [28, 34],
     moves: {
       booting: { name: "Booting", effects: [buffer(8)] },
-      initBurst: { name: "Init Burst", effects: [hit(17)] },
+      initBurst: { name: "Init Burst", effects: [hit(18)] },
       warmIdle: { name: "Warm Idle", effects: [hit(7), buffer(6)] },
     },
     ai: { kind: "script", opening: ["booting"], then: { kind: "cycle", moves: ["initBurst", "warmIdle"] } },
@@ -103,10 +103,10 @@ const LIST: Def[] = [
     description: "Holds a Buffer, queues Backlog, then deadlocks for a big hit.",
   },
   {
-    id: "launchDay", name: "Launch Day", tier: "boss", load: [110, 120],
+    id: "launchDay", name: "Launch Day", tier: "boss", load: [107, 115],
     moves: {
       pressRelease: { name: "Press Release", effects: [summon("trafficSpike", 1)] },
-      frontPage: { name: "Front Page", effects: [hit(6, 3)] },
+      frontPage: { name: "Front Page", effects: [hit(5, 3)] },
       signupRush: { name: "Signup Rush", effects: [hit(14), addCard("pager", "draw", 1)] },
       hugOfDeath: { name: "Hug of Death", effects: [hit(9, 3)] },
     },
@@ -239,7 +239,7 @@ const LIST: Def[] = [
 
   // ---------- Act 3: Hypergrowth ----------
   {
-    id: "cascadingFailure", name: "Cascading Failure", tier: "normal", load: [82, 90],
+    id: "cascadingFailure", name: "Cascading Failure", tier: "normal", load: [74, 82],
     moves: {
       spread: { name: "Spread", effects: [hit(8), onPlayer("degraded", 2)] },
       domino: { name: "Domino", effects: [hit(7, 2), onSelf("scaling", 2)] },
@@ -249,7 +249,7 @@ const LIST: Def[] = [
     description: "One failure knocks over the next. Degrades you and keeps Scaling.",
   },
   {
-    id: "certExpiry", name: "Cert Expiry", tier: "normal", load: [62, 70],
+    id: "certExpiry", name: "Cert Expiry", tier: "normal", load: [56, 63],
     moves: {
       renewalReminder: { name: "Renewal Reminder", effects: [buffer(18)] },
       finalWarning: { name: "Final Warning", effects: [buffer(18), onSelf("scaling", 4)] },
@@ -264,7 +264,7 @@ const LIST: Def[] = [
     description: "Quiet for two turns, then every handshake fails at once.",
   },
   {
-    id: "dnsOutage", name: "DNS Outage", tier: "normal", load: [80, 90],
+    id: "dnsOutage", name: "DNS Outage", tier: "normal", load: [72, 80],
     moves: {
       nxdomain: { name: "NXDOMAIN", effects: [hit(16)] },
       resolverDown: { name: "Resolver Down", effects: [hit(10), addCard("pager", "draw", 2)] },
@@ -274,7 +274,7 @@ const LIST: Def[] = [
     description: "It's always DNS. Sets off Pagers across the whole team.",
   },
   {
-    id: "clockSkew", name: "Clock Skew", tier: "normal", load: [70, 78],
+    id: "clockSkew", name: "Clock Skew", tier: "normal", load: [63, 70],
     moves: {
       desync: { name: "Desync", effects: [hit(6), onPlayer("latency", 2), onPlayer("degraded", 2)] },
       futureTimestamp: { name: "Future Timestamp", effects: [hit(20)] },
@@ -285,7 +285,7 @@ const LIST: Def[] = [
     description: "Nobody agrees what time it is. Hard to predict, worse when it Desyncs.",
   },
   {
-    id: "zombieProcess", name: "Zombie Process", tier: "normal", load: [56, 64],
+    id: "zombieProcess", name: "Zombie Process", tier: "normal", load: [50, 57],
     moves: {
       holdHandles: { name: "Hold File Handles", effects: [hit(9), onPlayer("backlog", 2)] },
       gnaw: { name: "Gnaw", effects: [hit(15)] },
@@ -295,7 +295,7 @@ const LIST: Def[] = [
     description: "Killed long ago and still running. Heals itself every third turn.",
   },
   {
-    id: "configGhost", name: "Config Ghost", tier: "normal", load: [64, 72],
+    id: "configGhost", name: "Config Ghost", tier: "normal", load: [58, 65],
     moves: {
       haunt: { name: "Haunt", effects: [hit(8), addCard("configDrift", "draw", 2)] },
       phantomOverride: { name: "Phantom Override", effects: [hit(14), onPlayer("degraded", 1)] },
@@ -307,7 +307,7 @@ const LIST: Def[] = [
   {
     id: "dataCorruption", name: "Data Corruption", tier: "elite", load: [135, 145],
     moves: {
-      silentCorruption: { name: "Silent Corruption", effects: [onPlayer("backlog", 5), onPlayer("latency", 2)] },
+      silentCorruption: { name: "Silent Corruption", effects: [onPlayer("backlog", 4), onPlayer("latency", 2)] },
       bitRot: { name: "Bit Rot", effects: [hit(8, 2), addCard("techDebt", "draw", 1)] },
       checksumFailure: { name: "Checksum Failure", effects: [hit(27)] },
     },

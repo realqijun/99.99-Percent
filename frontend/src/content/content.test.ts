@@ -263,7 +263,8 @@ describe("events", () => {
       for (const choice of event.choices) {
         for (const o of choice.outcomes) {
           if (o.op === "cash" && o.amount < 0) expect(choice.requires?.cash, `${event.id}: ${choice.label}`).toBeGreaterThanOrEqual(-o.amount);
-          if (o.op === "budget" && o.amount < 0) expect(choice.requires?.budget, `${event.id}: ${choice.label}`).toBeGreaterThan(-o.amount);
+          // A budget requirement of N means "more than N", so asking for exactly the cost keeps the SLA intact.
+          if (o.op === "budget" && o.amount < 0) expect(choice.requires?.budget, `${event.id}: ${choice.label}`).toBe(-o.amount);
         }
       }
     }
