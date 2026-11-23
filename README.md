@@ -56,6 +56,6 @@ npm run dev        # http://localhost:5173
 - Branch names: `fe/…`, `be/…`, `chore/…`, `rewrite/…`.
 - PR titles: `type(area): summary`, for example `feat(ai): voice loop`. The title becomes the squash commit message.
 - The `frontend` and `backend` CI checks must pass on a branch that is up to date with `main`.
-- Secrets go in `.env` files or Vercel settings, never in code.
+- Secrets go in `.env` files, never in code.
 - Changing a file in `shared/` changes a frontend/backend handoff, so agree it with the other side first.
-- Merging to `main` deploys to production and migrates the production database.
+- Merging to `main` deploys nothing. Releases go to itch.io by hand, as in `docs/DEPLOYMENT.md`.

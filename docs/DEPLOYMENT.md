@@ -1,20 +1,14 @@
 # Deployment, CI and database
 
-This is the source of truth for hosting, environment settings, the CI/CD pipeline and the production database.
+This is the source of truth for hosting, environment settings, CI and the database.
 Test commands are in [testing.md](testing.md); account-specific provider setup is in [AUTHENTICATION.md](AUTHENTICATION.md#deployment).
 
 ## Hosting
 
-Two Vercel projects deploy from this repository, in the `hoo-di-hengs-projects` team.
-Each rebuilds only when its own folder changed (`ignoreCommand` in its `vercel.json`).
-
-| Project | Root | Production URL | Notes |
-| --- | --- | --- | --- |
-| `frontend` | `frontend/` | [99-99-percent-web.vercel.app](https://99-99-percent-web.vercel.app) | Static Vite build |
-| `lingoquest-backend` | `backend/` | [99-99-percent-backend.vercel.app](https://99-99-percent-backend.vercel.app) | Express as a Vercel Function in Singapore (`sin1`), next to the database |
-
-Merges to `main` deploy both projects to production, and every pull request gets preview URLs.
-Changing a domain or setting does not update a running deployment; redeploy after changing environment variables.
+The game ships only to itch.io.
+This repository is a fork of `CS3216-Final-Project/99.9-Percent`, whose Vercel projects host the earlier tycoon version.
+Git deploys are off in `frontend/vercel.json` and `backend/vercel.json`, so Vercel builds nothing from this fork, even if a project is linked to it.
+There is no CD workflow.
 
 ## itch.io
 
@@ -43,26 +37,12 @@ Local defaults for the backend are in `backend/.env.example`.
 | backend | `OPENAI_API_KEY` | Secret | Retained dialogue endpoint |
 | backend | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `APP_ORIGIN` | Secret / Config | Google sign-in and the browser-facing origin for cookies and CSRF |
 
-Set the backend's `CORS_ORIGINS` to `https://99-99-percent-web.vercel.app,https://frontend-*-hoo-di-hengs-projects.vercel.app`.
-The preview pattern follows the Vercel project name, not its production domain.
-
-GitHub Actions needs these under Settings > Secrets and variables > Actions:
-
-| Name | Kind | Value |
-| --- | --- | --- |
-| `DATABASE_URL_UNPOOLED` | Secret | Neon's direct connection string, used by the migration |
-| `API_URL` | Variable, optional | API for the smoke test; defaults to `https://99-99-percent-backend.vercel.app` |
-
 ## Pipeline
 
 | Stage | When | Where | What |
 | --- | --- | --- | --- |
-| CI `frontend` | Every PR | `ci.yml` | Gate over `frontend-checks`: lint, typecheck, coverage, the itch.io zip and the Playwright tests |
+| CI `frontend` | Every PR | `ci.yml` | Gate over `frontend-checks` (lint, typecheck, coverage, the itch.io zip, the Playwright tests) and `frontend-balance` (the balance simulation) |
 | CI `backend` | Every PR | `ci.yml` | Lint, typecheck, coverage including every migration on in-memory Postgres, migrations match the schema |
-| Preview deploy | Every PR | Vercel | Preview URL for each project |
-| Production deploy | Push to `main` | Vercel | Both projects |
-| Migrate database | Push to `main` | `cd.yml` | `npm run db:migrate` on the production Neon database |
-| Smoke test | After the migration | `cd.yml` | `/api/health` and `/api/health/db` on the live API, retried while Vercel deploys |
 
 The `frontend` and `backend` checks must pass on a branch that is up to date with `main` before merging.
 CI does not rerun after the merge.
@@ -84,5 +64,6 @@ Tables are defined in `backend/src/db/schema.ts`.
 
 To change the schema, edit `schema.ts`, run `npm run db:generate` in `backend/` and commit the new files in `backend/drizzle/`.
 Never edit a merged migration.
-The migration runs on production automatically after the merge, at the same moment Vercel deploys the new code, so keep migrations backward-compatible: add first, then drop or rename in a later PR.
+Nothing runs migrations on a live database from this fork.
+Keep migrations backward-compatible anyway: add first, then drop or rename in a later PR.
 Use `npm run db:studio` to browse a database, and your own Neon branch for local work that needs one.
