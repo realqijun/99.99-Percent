@@ -1,6 +1,6 @@
 /* The rooms between combats, reached through engine-built saves and then used through the screen. */
 import { CONTENT } from "../src/content";
-import { cardText, retroRecoverAmount, type RunState } from "../src/engine";
+import { cardText, retroRecoverAmount, shopPrice, type RunState } from "../src/engine";
 import { budgetOf, engineRun, enter, expect, hand, openGame, play, saved, test } from "./support";
 
 const deckButton = /^Deck, \d+ cards?$/;
@@ -10,6 +10,7 @@ test("the Vendor sells a card and removes one", async ({ page }) => {
   const run = enter({ ...engineRun({ seed: "SHOP" }), cash: 400 }, "vendor");
   if (run.screen.kind !== "shop") throw new Error("not in a shop");
   const offer = run.screen.shop.cards[0];
+  const cost = shopPrice(run, offer.basePrice);
   const name = CONTENT.cards[offer.card.id].name;
   const game = await openGame(page, { storage: saved(run) });
   await game.getByRole("button", { name: "Continue" }).click();
@@ -17,19 +18,19 @@ test("the Vendor sells a card and removes one", async ({ page }) => {
   await expect(game.getByRole("heading", { name: "Vendor" })).toBeVisible();
   await expect(game.getByText("You have 400 cash.")).toBeVisible();
   const buy = game.getByRole("button", { name: startsWith(`Buy ${name}, `) });
-  await expect(buy).toHaveAccessibleName(new RegExp(`Price ${offer.price}\\.$`));
+  await expect(buy).toHaveAccessibleName(new RegExp(`Price ${cost}\\.$`));
   await expect(buy).toContainText(cardText(CONTENT.cards[offer.card.id], false));
   await buy.click();
-  await expect(game.getByText(`You have ${400 - offer.price} cash.`)).toBeVisible();
+  await expect(game.getByText(`You have ${400 - cost} cash.`)).toBeVisible();
   await expect(game.getByRole("button", { name: "Deck, 11 cards" })).toBeVisible();
   await expect(buy).toBeDisabled();
 
-  const price = run.screen.shop.removalPrice;
+  const price = shopPrice(run, run.screen.shop.removalBasePrice);
   // Backing out before picking a card refunds the removal.
   await game.getByRole("button", { name: `Remove for ${price}` }).click();
-  await expect(game.getByLabel(`${400 - offer.price - price} cash`)).toBeVisible();
+  await expect(game.getByLabel(`${400 - cost - price} cash`)).toBeVisible();
   await game.getByRole("button", { name: `Cancel, refund ${price}` }).click();
-  await expect(game.getByText(`You have ${400 - offer.price} cash.`)).toBeVisible();
+  await expect(game.getByText(`You have ${400 - cost} cash.`)).toBeVisible();
 
   await game.getByRole("button", { name: `Remove for ${price}` }).click();
   await expect(game.getByRole("heading", { name: "Remove a card" })).toBeVisible();
@@ -38,7 +39,7 @@ test("the Vendor sells a card and removes one", async ({ page }) => {
   await game.getByRole("button", { name: "Remove", exact: true }).click();
 
   await expect(game.getByRole("heading", { name: "Vendor" })).toBeVisible();
-  await expect(game.getByText(`You have ${400 - offer.price - price} cash.`)).toBeVisible();
+  await expect(game.getByText(`You have ${400 - cost - price} cash.`)).toBeVisible();
   await expect(game.getByRole("button", { name: "Done for this visit" })).toBeDisabled();
   await game.getByRole("button", { name: deckButton }).click();
   const deck = game.getByRole("dialog", { name: "Deck (10)" });
@@ -49,6 +50,26 @@ test("the Vendor sells a card and removes one", async ({ page }) => {
 
   await game.getByRole("button", { name: "Leave" }).click();
   await expect(game.getByRole("heading", { name: "Act 1" })).toBeVisible();
+});
+
+test("Cloud Credits bought at the Vendor lowers its other prices at once", async ({ page }) => {
+  const run = enter({ ...engineRun({ seed: "SHOP" }), cash: 400 }, "vendor");
+  if (run.screen.kind !== "shop") throw new Error("not in a shop");
+  run.screen.shop.relics = [{ relic: "cloudCredits", basePrice: 150, sold: false }];
+  const offer = run.screen.shop.cards[0];
+  const discounted = Math.round(offer.basePrice * 0.8);
+  const game = await openGame(page, { storage: saved(run) });
+  await game.getByRole("button", { name: "Continue" }).click();
+
+  const buy = game.getByRole("button", { name: startsWith(`Buy ${CONTENT.cards[offer.card.id].name}, `) });
+  await expect(buy).toHaveAccessibleName(new RegExp(`Price ${offer.basePrice}\\.$`));
+  await expect(game.getByRole("button", { name: "Remove for 75" })).toBeVisible();
+  await game.getByRole("button", { name: "Buy Cloud Credits, price 150" }).click();
+  await expect(game.getByText("You have 250 cash.")).toBeVisible();
+  await expect(buy).toHaveAccessibleName(new RegExp(`Price ${discounted}\\.$`));
+  await expect(game.getByRole("button", { name: "Remove for 60" })).toBeVisible();
+  await buy.click();
+  await expect(game.getByText(`You have ${250 - discounted} cash.`)).toBeVisible();
 });
 
 /** A run on a Retro with some Error Budget missing. */

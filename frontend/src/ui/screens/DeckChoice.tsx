@@ -1,7 +1,7 @@
 /* Pick a card from the deck outside combat: remove, upgrade (with a preview) or duplicate. */
 import { useState } from "react";
 import type { RunState } from "../../engine/types";
-import { canCancelDeckChoice, cardText } from "../../engine";
+import { canCancelDeckChoice, cardText, shopPrice } from "../../engine";
 import { useGame } from "../../game/store";
 import { CardGrid } from "../CardGrid";
 import { sortCards } from "../cards";
@@ -17,7 +17,7 @@ export function DeckChoice({ run }: { run: RunState }) {
   const [uid, setUid] = useState<number | null>(null);
   if (run.screen.kind !== "deckChoice") return null;
   const { action, then } = run.screen;
-  const back = !canCancelDeckChoice(run) ? null : then.kind === "shop" ? `Cancel, refund ${then.shop.removalPrice}` : "Back to the Retro";
+  const back = !canCancelDeckChoice(run) ? null : then.kind === "shop" ? `Cancel, refund ${shopPrice(run, then.shop.removalBasePrice, content)}` : "Back to the Retro";
   const cards = sortCards(run.deck, content);
   const picked = run.deck.find((c) => c.uid === uid) ?? null;
   const def = picked ? cardDef(content, picked.id) : null;

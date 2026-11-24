@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, canCancelDeckChoice, cantChoose, newRun, reachableNodes, retroRecoverAmount } from "./index";
+import { applyCommand, canCancelDeckChoice, cantChoose, newRun, reachableNodes, retroRecoverAmount, shopPrice } from "./index";
 import { BOSS_NODE, FLOORS } from "./map";
 import { cardChoices, combatRewards, makeShop } from "./rewards";
 import { rand } from "./rng";
@@ -250,10 +250,10 @@ describe("vendor", () => {
     const base = { common: 50, uncommon: 75, rare: 150 } as Record<string, number>;
     for (const o of shop.cards) {
       const b = base[FIXTURE.cards[o.card.id].rarity];
-      expect(o.price).toBeGreaterThanOrEqual(Math.round(b * 0.95));
-      expect(o.price).toBeLessThanOrEqual(Math.round(b * 1.05));
+      expect(o.basePrice).toBeGreaterThanOrEqual(Math.round(b * 0.95));
+      expect(o.basePrice).toBeLessThanOrEqual(Math.round(b * 1.05));
     }
-    expect(shop.removalPrice).toBe(75);
+    expect(shop.removalBasePrice).toBe(75);
   });
 
   it("buys, refuses without cash, and removes a card for a rising price", () => {
@@ -261,7 +261,7 @@ describe("vendor", () => {
     if (run.screen.kind !== "shop") throw new Error();
     const offer = run.screen.shop.cards[0];
     const bought = apply(run, { type: "buyCard", index: 0 }).run;
-    expect(bought.cash).toBe(99 - offer.price);
+    expect(bought.cash).toBe(99 - offer.basePrice);
     expect(bought.deck.at(-1)).toEqual(offer.card);
     expect(applyCommand(bought, { type: "buyCard", index: 0 }, FIXTURE).error).toBe("Not for sale");
     run.cash = 10;
@@ -275,7 +275,7 @@ describe("vendor", () => {
     expect(run.deck.some((c) => c.uid === card.uid)).toBe(false);
     expect(run.screen).toMatchObject({ kind: "shop", shop: { removalUsed: true } });
     expect(applyCommand(run, { type: "buyRemoval" }, FIXTURE).error).toBe("Already used");
-    expect(makeShop(run, FIXTURE).removalPrice).toBe(100);
+    expect(makeShop(run, FIXTURE).removalBasePrice).toBe(100);
     run.runbooks = ["scaleUp", "scaleUp", "scaleUp"];
     expect(applyCommand(run, { type: "buyRunbook", index: 0 }, FIXTURE).error).toBe("Runbook slots are full");
     expect(apply(run, { type: "leave" }).run.screen).toEqual({ kind: "map" });
@@ -300,7 +300,23 @@ describe("vendor", () => {
   it("the Coupon discounts everything, removal included", () => {
     const run = shopRun(["coupon"]);
     if (run.screen.kind !== "shop") throw new Error();
-    expect(run.screen.shop.removalPrice).toBe(60);
+    expect(shopPrice(run, run.screen.shop.removalBasePrice, FIXTURE)).toBe(60);
+  });
+
+  it("a discount bought at the Vendor applies to its other prices at once, removal included", () => {
+    let run = shopRun();
+    if (run.screen.kind !== "shop") throw new Error();
+    run.screen.shop.relics[0] = { relic: "coupon", basePrice: 150, sold: false };
+    run.cash = 1000;
+    const card = run.screen.shop.cards[0].basePrice;
+    run = apply(run, { type: "buyRelic", index: 0 }).run;
+    expect(run.cash).toBe(850);
+    expect(shopPrice(run, card, FIXTURE)).toBe(Math.round(card * 0.8));
+    run = apply(run, { type: "buyCard", index: 0 }).run;
+    expect(run.cash).toBe(850 - Math.round(card * 0.8));
+    run = apply(run, { type: "buyRemoval" }).run;
+    expect(run.cash).toBe(850 - Math.round(card * 0.8) - 60);
+    expect(apply(run, { type: "cancel" }).run.cash).toBe(850 - Math.round(card * 0.8));
   });
 });
 

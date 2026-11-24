@@ -1,6 +1,6 @@
 /* The Vendor: cards, relics and runbooks for cash, and a card removal service. */
 import type { RunState } from "../../engine/types";
-import { cardText } from "../../engine";
+import { cardText, shopPrice } from "../../engine";
 import { useGame } from "../../game/store";
 import { Icon } from "../art";
 import { baseCost, cardLabel } from "../cards";
@@ -25,6 +25,8 @@ export function Shop({ run }: { run: RunState }) {
   const shop = run.screen.shop;
   const cash = run.cash;
   const slotsFull = run.runbooks.every(Boolean);
+  const priceOf = (basePrice: number) => shopPrice(run, basePrice, content);
+  const removalPrice = priceOf(shop.removalBasePrice);
   const why = (price: number, sold: boolean) => (sold ? "sold" : price > cash ? "not enough cash" : "");
 
   return (
@@ -42,7 +44,8 @@ export function Shop({ run }: { run: RunState }) {
           {shop.cards.map((item, i) => {
             const def = cardDef(content, item.card.id);
             const text = cardText(def, item.card.upgraded, undefined, undefined, content);
-            const reason = why(item.price, item.sold);
+            const price = priceOf(item.basePrice);
+            const reason = why(price, item.sold);
             return (
               <li key={item.card.uid}>
                 <button
@@ -50,11 +53,11 @@ export function Shop({ run }: { run: RunState }) {
                   className={`card-btn${item.sold ? " is-sold" : ""}`}
                   disabled={Boolean(reason)}
                   onClick={() => dispatch({ type: "buyCard", index: i })}
-                  aria-label={`Buy ${cardLabel(def, item.card.upgraded, baseCost(def, item.card.upgraded), text)} Price ${item.price}${reason ? `, ${reason}` : ""}.`}
+                  aria-label={`Buy ${cardLabel(def, item.card.upgraded, baseCost(def, item.card.upgraded), text)} Price ${price}${reason ? `, ${reason}` : ""}.`}
                 >
                   <CardView def={def} upgraded={item.card.upgraded} text={text} small />
                 </button>
-                <Price price={item.price} cash={cash} sold={item.sold} />
+                <Price price={price} cash={cash} sold={item.sold} />
               </li>
             );
           })}
@@ -64,7 +67,8 @@ export function Shop({ run }: { run: RunState }) {
       <div className="shop__lower">
         <section aria-label="Relics for sale" className="shop__tiles">
           {shop.relics.map((item, i) => {
-            const reason = why(item.price, item.sold);
+            const price = priceOf(item.basePrice);
+            const reason = why(price, item.sold);
             return (
               <button
                 key={item.relic}
@@ -72,10 +76,10 @@ export function Shop({ run }: { run: RunState }) {
                 className="tile-btn"
                 disabled={Boolean(reason)}
                 onClick={() => dispatch({ type: "buyRelic", index: i })}
-                aria-label={`Buy ${relicDef(content, item.relic).name}, price ${item.price}${reason ? `, ${reason}` : ""}`}
+                aria-label={`Buy ${relicDef(content, item.relic).name}, price ${price}${reason ? `, ${reason}` : ""}`}
               >
                 <RelicTile id={item.relic}>
-                  <Price price={item.price} cash={cash} sold={item.sold} />
+                  <Price price={price} cash={cash} sold={item.sold} />
                 </RelicTile>
               </button>
             );
@@ -83,7 +87,8 @@ export function Shop({ run }: { run: RunState }) {
         </section>
         <section aria-label="Runbooks for sale" className="shop__tiles">
           {shop.runbooks.map((item, i) => {
-            const reason = why(item.price, item.sold) || (slotsFull ? "runbook slots full" : "");
+            const price = priceOf(item.basePrice);
+            const reason = why(price, item.sold) || (slotsFull ? "runbook slots full" : "");
             return (
               <button
                 key={`${item.runbook}-${i}`}
@@ -91,10 +96,10 @@ export function Shop({ run }: { run: RunState }) {
                 className="tile-btn"
                 disabled={Boolean(reason)}
                 onClick={() => dispatch({ type: "buyRunbook", index: i })}
-                aria-label={`Buy ${runbookDef(content, item.runbook).name}, price ${item.price}${reason ? `, ${reason}` : ""}`}
+                aria-label={`Buy ${runbookDef(content, item.runbook).name}, price ${price}${reason ? `, ${reason}` : ""}`}
               >
                 <RunbookTile id={item.runbook}>
-                  <Price price={item.price} cash={cash} sold={item.sold} />
+                  <Price price={price} cash={cash} sold={item.sold} />
                 </RunbookTile>
               </button>
             );
@@ -106,12 +111,12 @@ export function Shop({ run }: { run: RunState }) {
           <button
             type="button"
             className="btn btn--small"
-            disabled={shop.removalUsed || shop.removalPrice > cash}
+            disabled={shop.removalUsed || removalPrice > cash}
             onClick={() => dispatch({ type: "buyRemoval" })}
           >
-            {shop.removalUsed ? "Done for this visit" : `Remove for ${shop.removalPrice}`}
+            {shop.removalUsed ? "Done for this visit" : `Remove for ${removalPrice}`}
           </button>
-          {!shop.removalUsed && shop.removalPrice > cash && <p className="bad small">Not enough cash</p>}
+          {!shop.removalUsed && removalPrice > cash && <p className="bad small">Not enough cash</p>}
         </section>
       </div>
     </main>

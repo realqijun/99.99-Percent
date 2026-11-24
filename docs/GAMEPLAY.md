@@ -222,6 +222,7 @@ You start the run with 99 cash.
 
 Shop relics cost 150.
 Each price varies by up to 5% either way, and discounts apply to everything, removal included.
+A discount bought at the Vendor applies to its other prices at once.
 Shop cards are 55% common, 35% uncommon and 10% rare.
 
 ### Retro and events

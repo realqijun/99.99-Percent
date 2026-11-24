@@ -125,18 +125,14 @@ export function combatRewards(run: RunState, content: Content, tier: Tier, rejec
   return items;
 }
 
-/** Applies the shop discount and rounds. */
-export function discounted(run: RunState, content: Content, price: number): number {
-  return Math.max(0, Math.round((price * (100 - passiveSum(run, content, "shopDiscountPct"))) / 100));
+/** What a shop's base price costs now: the shop discount applied, rounded to the nearest. */
+export function shopPrice(run: RunState, content: Content, basePrice: number): number {
+  return Math.max(0, Math.round((basePrice * (100 - passiveSum(run, content, "shopDiscountPct"))) / 100));
 }
 
 /** Prices vary by up to 5% either way. */
-function jitter(run: RunState, content: Content, price: number): number {
-  return discounted(run, content, Math.round(price * (0.95 + next(run.rng, "rewards") * 0.1)));
-}
-
-export function removalPrice(run: RunState, content: Content): number {
-  return discounted(run, content, REMOVAL_BASE + REMOVAL_STEP * run.removals);
+function jitter(run: RunState, price: number): number {
+  return Math.round(price * (0.95 + next(run.rng, "rewards") * 0.1));
 }
 
 export function makeShop(run: RunState, content: Content): ShopState {
@@ -148,16 +144,16 @@ export function makeShop(run: RunState, content: Content): ShopState {
       const def = rollCard(run, options, CARD_WEIGHTS.shop, picked, "cards");
       if (!def) break;
       picked.add(def.id);
-      cards.push({ card: newCard(run, def.id), price: jitter(run, content, CARD_PRICE[def.rarity as Rarity]), sold: false });
+      cards.push({ card: newCard(run, def.id), basePrice: jitter(run, CARD_PRICE[def.rarity as Rarity]), sold: false });
     }
   }
   const relicOptions = shuffled(run.rng, "rewards", relicPool(run, content, ["common", "uncommon", "rare", "shop"]));
-  const relics = relicOptions.slice(0, 3).map((r) => ({ relic: r.id, price: jitter(run, content, RELIC_PRICE[r.rarity] ?? 150), sold: false }));
+  const relics = relicOptions.slice(0, 3).map((r) => ({ relic: r.id, basePrice: jitter(run, RELIC_PRICE[r.rarity] ?? 150), sold: false }));
   const runbooks: ShopState["runbooks"] = [];
   for (let i = 0; i < 3; i++) {
     const id = rollRunbook(run, content, "rewards", runbooks.map((b) => b.runbook));
     if (!id) break;
-    runbooks.push({ runbook: id, price: jitter(run, content, RUNBOOK_PRICE[content.runbooks[id].rarity]), sold: false });
+    runbooks.push({ runbook: id, basePrice: jitter(run, RUNBOOK_PRICE[content.runbooks[id].rarity]), sold: false });
   }
-  return { cards, relics, runbooks, removalPrice: removalPrice(run, content), removalUsed: false };
+  return { cards, relics, runbooks, removalBasePrice: REMOVAL_BASE + REMOVAL_STEP * run.removals, removalUsed: false };
 }

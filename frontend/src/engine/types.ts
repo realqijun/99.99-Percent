@@ -385,11 +385,12 @@ export type RewardItem =
   | { kind: "relic"; relic: string; taken: boolean }
   | { kind: "runbook"; runbook: string; taken: boolean };
 
+/** Prices are before discounts, so a discount bought here applies at once; `shopPrice` gives what they cost now. */
 export interface ShopState {
-  cards: { card: CardInstance; price: number; sold: boolean }[];
-  relics: { relic: string; price: number; sold: boolean }[];
-  runbooks: { runbook: string; price: number; sold: boolean }[];
-  removalPrice: number;
+  cards: { card: CardInstance; basePrice: number; sold: boolean }[];
+  relics: { relic: string; basePrice: number; sold: boolean }[];
+  runbooks: { runbook: string; basePrice: number; sold: boolean }[];
+  removalBasePrice: number;
   removalUsed: boolean;
 }
 

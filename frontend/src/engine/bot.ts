@@ -8,7 +8,7 @@
  * like infrastructure are worth their expected value over the turns left in the combat.
  */
 import { CONTENT } from "../content";
-import { cantChoose, cantPlay, costNow, reachableNodes, retroRecoverAmount } from "./index";
+import { cantChoose, cantPlay, costNow, reachableNodes, retroRecoverAmount, shopPrice } from "./index";
 import type {
   Amount,
   CardDef,
@@ -591,18 +591,19 @@ function shopCommand(run: RunState, content: Content): Command {
   const shop = run.screen.shop;
   const junk = run.deck.some((card) => isJunk(content.cards[card.id]));
   const starters = run.deck.filter((card) => content.cards[card.id].rarity === "starter").length;
-  if (!shop.removalUsed && run.cash >= shop.removalPrice && (junk || starters >= 7)) return { type: "buyRemoval" };
-  const relic = shop.relics.findIndex((r) => !r.sold && r.price <= run.cash);
+  const price = (basePrice: number) => shopPrice(run, basePrice, content);
+  if (!shop.removalUsed && run.cash >= price(shop.removalBasePrice) && (junk || starters >= 7)) return { type: "buyRemoval" };
+  const relic = shop.relics.findIndex((r) => !r.sold && price(r.basePrice) <= run.cash);
   if (relic >= 0) return { type: "buyRelic", index: relic };
   const bar = 1.5 + 0.12 * Math.max(0, run.deck.length - 10);
   let card = -1;
   shop.cards.forEach((offer, index) => {
-    if (offer.sold || offer.price > run.cash) return;
+    if (offer.sold || price(offer.basePrice) > run.cash) return;
     const worth = cardWorth(run, offer.card, content);
     if (worth > bar && (card < 0 || worth > cardWorth(run, shop.cards[card].card, content))) card = index;
   });
   if (card >= 0) return { type: "buyCard", index: card };
-  const runbook = shop.runbooks.findIndex((r) => !r.sold && r.price <= run.cash - 40);
+  const runbook = shop.runbooks.findIndex((r) => !r.sold && price(r.basePrice) <= run.cash - 40);
   if (runbook >= 0 && run.runbooks.includes(null)) return { type: "buyRunbook", index: runbook };
   return { type: "leave" };
 }
