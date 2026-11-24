@@ -164,12 +164,12 @@ function startPlayerTurn(ctx: Ctx, keepCapacity = false): void {
 
   c.engineers = c.engineersPerTurn;
   ctx.events.push({ type: "engineers", amount: c.engineers });
+  // The opening draw takes every Innate card, even past the hand size, on top of any relic draws; draw() stops at the hand limit.
+  const innate = c.turn === 1 ? c.drawPile.filter(isInnate(content)).length : 0;
   if (c.turn === 1) fireRelics(ctx, "firstTurnStart");
   fireRelics(ctx, "turnStart");
   if (c.phase !== "player") return;
-  const count = HAND_SIZE + passiveSum(run, content, "drawPerTurn");
-  // The opening draw takes every Innate card still on top, even past the hand size; draw() stops at the hand limit.
-  draw(ctx, c.turn === 1 ? Math.max(count, c.drawPile.filter(isInnate(content)).length) : count);
+  draw(ctx, Math.max(HAND_SIZE + passiveSum(run, content, "drawPerTurn"), innate));
 }
 
 // ---------- playing cards and runbooks ----------

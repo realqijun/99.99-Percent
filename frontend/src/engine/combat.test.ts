@@ -67,6 +67,16 @@ describe("combat start", () => {
     expect(opening(12)).toEqual(Array(10).fill("harden"));
   });
 
+  it("adds turn-1 draw relics on top of a hand full of Innate cards", () => {
+    const opening = (innate: number) =>
+      combat(inCombat("a1spike", (r) => {
+        r.deck = Array.from({ length: 14 }, (_, j) => ({ uid: 100 + j, id: j < innate ? "harden" : "serve", upgraded: false }));
+      }, { character: "jordan", seed: "innate-monitoring" })).hand.length;
+    expect(opening(3)).toBe(6);
+    expect(opening(6)).toBe(7);
+    expect(opening(7)).toBe(8);
+  });
+
   it("scales enemy Load by difficulty and tier", () => {
     const load = (encounter: string, difficulty: 0 | 1 | 2 | 3) => combat(inCombat(encounter, () => {}, { difficulty, seed: "load" })).enemies[0].maxLoad;
     expect(load("a1boss", 3)).toBe(Math.round(80 * 1.15));
