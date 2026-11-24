@@ -502,8 +502,11 @@ describe("events", () => {
     // A full slot can be freed, and then the runbook can be taken.
     const freed = apply(at("vendorDemo", full), { type: "discardRunbook", slot: 0 }).run;
     expect(cantChoose(freed, 0, FIXTURE)).toBeNull();
-    // An event can be left without a choice, for when every choice is blocked.
-    expect(apply(at("vendorDemo", full), { type: "leave" }).run.screen).toEqual({ kind: "map" });
+    // An event can be left without a choice only when every choice is blocked.
+    expect(applyCommand(at("vendorDemo", full), { type: "leave" }, FIXTURE).error).toBe("Make a choice first");
+    const demo = FIXTURE.events.vendorDemo;
+    const runbooksOnly = { ...FIXTURE, events: { ...FIXTURE.events, vendorDemo: { ...demo, choices: demo.choices.slice(0, 2) } } };
+    expect(applyCommand(at("vendorDemo", full), { type: "leave" }, runbooksOnly).run.screen).toEqual({ kind: "map" });
   });
 
   it("picks an unseen event for the act at an event node", () => {
@@ -579,7 +582,10 @@ describe("treasure, bosses and acts", () => {
           fought += 1;
           run = win(run);
         } else if (run.screen.kind === "bossRelic") run = apply(run, { type: "pickBossRelic", index: 0 }).run;
-        else run = apply(run, { type: "leave" }).run;
+        else if (run.screen.kind === "event" && run.screen.chosen === null) {
+          const event = FIXTURE.events[run.screen.event];
+          run = apply(run, { type: "eventChoice", index: event.choices.findIndex((_, i) => cantChoose(run, i, FIXTURE) === null) }).run;
+        } else run = apply(run, { type: "leave" }).run;
       }
       return { run, fought };
     };

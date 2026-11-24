@@ -308,9 +308,15 @@ function leave(run: RunState, content: Content, events: GameEvent[]): string | n
     case "bossRelic":
       startAct(run, (run.act + 1) as Act, content, events);
       return null;
+    case "event": {
+      // An event is left after its choice, or without one only when every choice is blocked.
+      const choices = content.events[run.screen.event]?.choices ?? [];
+      if (run.screen.chosen === null && choices.some((_, i) => eventChoiceBlocked(run, i, content) === null)) return "Make a choice first";
+      run.screen = { kind: "map" };
+      return null;
+    }
     case "shop":
     case "retro":
-    case "event":
     case "treasure":
       run.screen = { kind: "map" };
       return null;
