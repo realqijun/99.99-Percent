@@ -101,12 +101,16 @@ export function startCombat(run: RunState, encounterId: string, content: Content
   }
 
   // Innate cards go on top after combat-start effects, so cards those add can't push them out of the opening hand.
-  const innate = (card: CardInstance) => {
+  const innate = isInnate(content);
+  c.drawPile = [...c.drawPile.filter(innate), ...c.drawPile.filter((card) => !innate(card))];
+  startPlayerTurn(ctx);
+}
+
+function isInnate(content: Content): (card: CardInstance) => boolean {
+  return (card) => {
     const def = content.cards[card.id];
     return def !== undefined && hasKeyword(cardStats(def, card.upgraded), "innate");
   };
-  c.drawPile = [...c.drawPile.filter(innate), ...c.drawPile.filter((card) => !innate(card))];
-  startPlayerTurn(ctx);
 }
 
 function dropStatus(statuses: Partial<Record<StatusId, number>>, status: StatusId): void {
@@ -163,7 +167,9 @@ function startPlayerTurn(ctx: Ctx, keepCapacity = false): void {
   if (c.turn === 1) fireRelics(ctx, "firstTurnStart");
   fireRelics(ctx, "turnStart");
   if (c.phase !== "player") return;
-  draw(ctx, HAND_SIZE + passiveSum(run, content, "drawPerTurn"));
+  const count = HAND_SIZE + passiveSum(run, content, "drawPerTurn");
+  // The opening draw takes every Innate card still on top, even past the hand size; draw() stops at the hand limit.
+  draw(ctx, c.turn === 1 ? Math.max(count, c.drawPile.filter(isInnate(content)).length) : count);
 }
 
 // ---------- playing cards and runbooks ----------

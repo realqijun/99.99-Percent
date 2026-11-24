@@ -58,6 +58,15 @@ describe("combat start", () => {
     }
   });
 
+  it("draws every Innate card into the opening hand, even more than the hand size, up to the hand limit", () => {
+    const opening = (innate: number) =>
+      combat(inCombat("a1spike", (r) => {
+        r.deck = Array.from({ length: 14 }, (_, j) => ({ uid: 100 + j, id: j < innate ? "harden" : "serve", upgraded: false }));
+      }, { character: "taylor", seed: "innate-many" })).hand.map((h) => h.id);
+    expect(opening(7)).toEqual(Array(7).fill("harden"));
+    expect(opening(12)).toEqual(Array(10).fill("harden"));
+  });
+
   it("scales enemy Load by difficulty and tier", () => {
     const load = (encounter: string, difficulty: 0 | 1 | 2 | 3) => combat(inCombat(encounter, () => {}, { difficulty, seed: "load" })).enemies[0].maxLoad;
     expect(load("a1boss", 3)).toBe(Math.round(80 * 1.15));

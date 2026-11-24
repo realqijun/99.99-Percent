@@ -83,7 +83,7 @@ Writes bypass the cache, so Read Cache Capacity and Read Replica Serve are halve
 | Decommission | Removed from the deck for the rest of the combat after it is played. |
 | Retain | Not discarded at the end of the turn. |
 | Volatile | Decommissioned if it is still in your hand at the end of the turn. |
-| Innate | Starts the combat in your opening hand. |
+| Innate | Starts the combat in your opening hand. With more than 5, the opening hand draws them all, up to the hand limit of 10. |
 | Unplayable | Can't be played. |
 | Reject N | Gain N Capacity. Each Reject played cuts that combat's cash reward by 15% of what is left, because rejected traffic earns nothing. |
 
