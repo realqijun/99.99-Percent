@@ -22,7 +22,7 @@ export const CARD_TYPES: Record<CardType, string> = { attack: "Serve", skill: "O
 export const NODE_KINDS: Record<NodeKind, { name: string; text: string }> = {
   incident: { name: "Incident", text: "A normal combat." },
   major: { name: "Major Incident", text: "An elite combat. Drops a relic." },
-  event: { name: "Event", text: "A scene with a colleague." },
+  event: { name: "Event", text: "A scene with a colleague. An Incident once scenes run out." },
   vendor: { name: "Vendor", text: "Buy cards, relics and runbooks, or remove a card." },
   retro: { name: "Retro", text: "Rest or upgrade a card." },
   treasure: { name: "Treasure", text: "A free relic." },
