@@ -150,7 +150,7 @@ export function serveHit(ctx: Ctx, enemy: EnemyState, base: number): void {
 
 export function randomEnemy(ctx: Ctx): EnemyState | undefined {
   const list = alive(ctx.c);
-  return list.length > 0 ? pickFrom(ctx.run.rng, "shuffle", list) : undefined;
+  return list.length > 0 ? pickFrom(ctx.run.rng, "targets", list) : undefined;
 }
 
 export function addStatus(ctx: Ctx, target: "player" | EnemyState, status: StatusId, amount: number): void {

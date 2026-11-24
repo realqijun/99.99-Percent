@@ -724,3 +724,29 @@ describe("ending a combat", () => {
     expect(events.at(-1)).toEqual({ type: "runLost" });
   });
 });
+
+describe("random enemy targets", () => {
+  it("don't change the draw order", () => {
+    /** Plays an attack with uid 900, then a Hotfix that reshuffles the discard pile into the draw pile. */
+    const reshuffleAfter = (attack: string) => {
+      let run = inCombat("a1pair");
+      const c = combat(run);
+      for (const e of c.enemies) e.load = e.maxLoad = 999;
+      c.engineers = 10;
+      c.drawPile = [];
+      c.hand = [{ uid: 900, id: attack, upgraded: false }, { uid: 901, id: "hotfix", upgraded: false }];
+      c.discardPile = Array.from({ length: 10 }, (_, i) => ({ uid: 910 + i, id: "serve", upgraded: false }));
+      run.nextUid = 1000;
+      const played = apply(run, { type: "playCard", uid: 900, target: c.enemies[0].key });
+      run = played.run;
+      const reshuffled = apply(run, { type: "playCard", uid: 901 });
+      expect(ofType(reshuffled.events, "shuffle")).toHaveLength(1);
+      const after = combat(reshuffled.run);
+      return { serves: ofType(played.events, "serve").length, order: [...after.hand, ...after.drawPile].map((card) => card.uid) };
+    };
+    const random = reshuffleAfter("scatter");
+    const aimed = reshuffleAfter("sweep");
+    expect(random.serves).toBe(3);
+    expect(random.order).toEqual(aimed.order);
+  });
+});

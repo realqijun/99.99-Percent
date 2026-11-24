@@ -23,7 +23,8 @@ Card text, costs, playability and reachable map nodes all come from the engine.
 ## Rules for the engine
 
 - All randomness comes from the seeded streams in `RunState.rng`, through `engine/rng.ts`. Never `Math.random()` or the clock.
-- There are separate streams for the map, shuffles, card rewards, enemy AI, events and other rewards, so a choice in one place can't change the luck in another.
+- There are separate streams for the map, shuffles, random enemy targets, card rewards, enemy AI, events and other rewards, so a choice in one place can't change the luck in another.
+- The map stream is only used when an act's map is made, which rolls the layout, the boss and every Incident and Major Incident encounter at once, so the path taken can't change a later act.
 - `applyCommand` never mutates its input. A refused command returns the input unchanged with an `error`.
 - Content is passed in as a `Content` object, which defaults to `src/content`. Engine tests use their own fixtures.
 

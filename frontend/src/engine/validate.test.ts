@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, RUN_VERSION, validateRun } from "./index";
 import { FIXTURE, fixtureRun, inCombat, playRandomly } from "./__fixtures__/helpers";
-import type { RunState } from "./types";
+import type { MapNode, RunState } from "./types";
 
 const roundTrip = (run: RunState): unknown => JSON.parse(JSON.stringify(run));
+const fightNode = (r: Record<string, any>): MapNode => Object.values(r.map.nodes as Record<string, MapNode>).find((n) => n.kind === "incident")!;
 
 describe("validateRun", () => {
   // A whole run with a deep compare at every step; the default 5 second timeout is too tight under coverage.
@@ -60,6 +61,10 @@ describe("validateRun", () => {
       ["path not ending at the position", (r) => r.path.push(Object.keys(r.map.nodes)[0])],
       ["missing path", (r) => delete r.path],
       ["unknown boss", (r) => (r.map.boss = "nope")],
+      ["unknown node encounter", (r) => (fightNode(r).encounter = "nope")],
+      ["node encounter of the wrong tier", (r) => (fightNode(r).encounter = "a1boss")],
+      ["fight node without an encounter", (r) => delete fightNode(r).encounter],
+      ["encounter on a non-fight node", (r) => (Object.values(r.map.nodes as Record<string, MapNode>).find((n) => n.kind === "treasure")!.encounter = "a1spike")],
       ["map act mismatch", (r) => (r.act = 2)],
       ["missing rng stream", (r) => delete r.rng.ai],
       ["uid not below nextUid", (r) => (r.nextUid = 1)],

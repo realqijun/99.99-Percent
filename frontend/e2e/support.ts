@@ -88,11 +88,15 @@ export function saved(run: RunState): Record<string, string> {
   return { [KEYS.run]: JSON.stringify(run), [KEYS.profile]: JSON.stringify({ unlocked: { jordan: 0, taylor: 0 }, history: [], tutorialDone: true }) };
 }
 
-/** Turns every node the run can move to next into this kind, then moves to the first one. */
-export function enter(run: RunState, kind: RunState["map"]["nodes"][string]["kind"]): RunState {
+/** Turns every node the run can move to next into this room, then moves to the first one. */
+export function enter(run: RunState, kind: "event" | "vendor" | "retro" | "treasure"): RunState {
   const next = structuredClone(run);
   const ids = next.position === null ? Object.values(next.map.nodes).filter((n) => n.floor === 1).map((n) => n.id) : next.map.nodes[next.position].next;
-  for (const id of ids) next.map.nodes[id].kind = kind;
+  for (const id of ids) {
+    next.map.nodes[id].kind = kind;
+    // Only fight nodes hold an encounter.
+    delete next.map.nodes[id].encounter;
+  }
   return play(next, { type: "chooseNode", node: ids[0] });
 }
 
