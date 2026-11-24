@@ -30,7 +30,9 @@ Advanced states are built with the engine in Node (`import` from `../src/engine`
 | `saves.spec.ts` | A corrupt saved run moves to the broken-save slot and the title exports it. |
 | `rooms.spec.ts` | The Vendor sells a card and removes one. |
 | `rooms.spec.ts` | A Retro rest recovers the amount shown; a Refactor upgrades a card with a preview. |
+| `rooms.spec.ts` | The Vendor and the Retro say why an item or a Refactor can't be picked. |
 | `rooms.spec.ts` | An event plays its lines, takes a choice and shows the reply. |
+| `rooms.spec.ts` | An event with every choice blocked can be left from the keyboard. |
 | `rooms.spec.ts` | Beating a boss offers boss relics, then the next act's map. |
 | `settings.spec.ts` | Settings persist across a reload, and mute puts the audio to sleep. |
 

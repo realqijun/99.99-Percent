@@ -2224,8 +2224,22 @@ kbd {
   font-size: 16px;
 }
 
-.big-choice:hover {
+.big-choice span.bad {
+  color: var(--red);
+  font-size: 14px;
+}
+
+.big-choice:hover:not(:disabled) {
   background: #41387a;
+}
+
+.big-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.big-choice:disabled strong {
+  color: var(--muted);
 }
 
 /* ---------- shop ---------- */
@@ -2250,6 +2264,17 @@ kbd {
   display: grid;
   justify-items: center;
   gap: 8px;
+}
+
+.offer {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+/* The reason line keeps its height under cards, so the shop doesn't move when cash changes. */
+.shop__cards .offer {
+  grid-template-rows: auto 19px;
 }
 
 .price {
@@ -2279,7 +2304,7 @@ kbd {
   display: grid;
   grid-template-columns: 1fr 1fr 230px;
   gap: 16px;
-  margin-top: 22px;
+  margin-top: 4px;
 }
 
 .shop__tiles {
@@ -2306,7 +2331,8 @@ kbd {
   display: none;
 }
 
-.shop__tiles .tile .price {
+.shop__tiles .offer {
+  justify-items: end;
   margin-left: auto;
   flex: none;
 }
@@ -2418,6 +2444,10 @@ kbd {
 
 .event-choice:disabled strong {
   color: var(--muted);
+}
+
+.event__leave {
+  margin-top: 12px;
 }
 
 .event__talk > .row {

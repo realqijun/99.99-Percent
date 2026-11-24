@@ -7,9 +7,9 @@ import { cantPlayReason, cardCost } from "./combat";
 import { choiceCandidates } from "./effects";
 import { reachableNodes as reachable } from "./map";
 import { shopPrice as discountedPrice } from "./rewards";
-import { applyRunCommand, createRun, deckChoiceCancellable, eventChoiceBlocked, retroRecoverAmount as retroAmount, RUN_VERSION } from "./run";
+import { applyRunCommand, createRun, deckChoiceCancellable, eventChoiceBlocked, retroBlocked, retroRecoverAmount as retroAmount, RUN_VERSION, shopBlocked } from "./run";
 import { describeCard } from "./text";
-import type { CardDef, CardInstance, CombatState, CommandResult, Command, Content, NewRunOptions, RunState } from "./types";
+import type { CardDef, CardInstance, CombatState, CommandResult, Command, Content, NewRunOptions, RetroCommand, RunState, ShopCommand } from "./types";
 import { checkRun } from "./validate";
 
 export * from "./types";
@@ -67,6 +67,16 @@ export function shopPrice(run: RunState, basePrice: number, content: Content = C
 /** Why an event choice can't be made now (not enough cash or Error Budget, or it would do nothing), or null if it can. */
 export function cantChoose(run: RunState, index: number, content: Content = CONTENT): string | null {
   return eventChoiceBlocked(run, index, content);
+}
+
+/** Why a Vendor purchase can't be made now (sold, not enough cash, slots full, removal used), or null if it can. */
+export function cantBuy(run: RunState, cmd: ShopCommand, content: Content = CONTENT): string | null {
+  return shopBlocked(run, cmd, content);
+}
+
+/** Why a Retro option can't be taken now (no card left to refactor), or null if it can. */
+export function cantRetro(run: RunState, cmd: RetroCommand, content: Content = CONTENT): string | null {
+  return retroBlocked(run, cmd, content);
 }
 
 /** Map nodes the player can move to now. */

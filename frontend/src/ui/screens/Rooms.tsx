@@ -1,6 +1,6 @@
 /* The Retro (rest or refactor) and colleague events. */
 import { useLayoutEffect, useRef, useState } from "react";
-import { cantChoose, retroRecoverAmount } from "../../engine";
+import { cantChoose, cantRetro, retroRecoverAmount } from "../../engine";
 import type { RunState } from "../../engine/types";
 import { useGame } from "../../game/store";
 import { Icon } from "../art";
@@ -12,6 +12,8 @@ export function Retro({ run }: { run: RunState }) {
   const dispatch = useGame((s) => s.dispatch);
   if (run.screen.kind !== "retro") return null;
   const recover = retroRecoverAmount(run, content);
+  const cantRest = cantRetro(run, { type: "rest" }, content);
+  const cantRefactor = cantRetro(run, { type: "refactor" }, content);
   return (
     <main className="room">
       <div className="room__panel panel">
@@ -21,15 +23,17 @@ export function Retro({ run }: { run: RunState }) {
           <p className="room__done">Done. Back to work.</p>
         ) : (
           <div className="retro-choices">
-            <button type="button" className="big-choice" onClick={() => dispatch({ type: "rest" })}>
+            <button type="button" className="big-choice" disabled={cantRest !== null} onClick={() => dispatch({ type: "rest" })}>
               <Icon name="budget" size={32} />
               <strong>Rest</strong>
               <span>{recover > 0 ? `Recover ${recover} Error Budget.` : "Your Error Budget is already full."}</span>
+              {cantRest && <span className="bad small">{cantRest}</span>}
             </button>
-            <button type="button" className="big-choice" onClick={() => dispatch({ type: "refactor" })}>
+            <button type="button" className="big-choice" disabled={cantRefactor !== null} onClick={() => dispatch({ type: "refactor" })}>
               <Icon name="type-skill" size={32} />
               <strong>Refactor</strong>
               <span>Upgrade a card in your deck.</span>
+              {cantRefactor && <span className="bad small">{cantRefactor}</span>}
             </button>
           </div>
         )}
@@ -75,6 +79,7 @@ export function EventScreen({ run }: { run: RunState }) {
   const allShown = lines >= event.lines.length;
   const speaker = COLLEAGUE_NAMES[event.speaker];
   const choice = chosen !== null ? event.choices[chosen] : null;
+  const blocked = event.choices.map((_, i) => cantChoose(run, i, content));
 
   return (
     <main className="event">
@@ -107,20 +112,26 @@ export function EventScreen({ run }: { run: RunState }) {
               </button>
             </div>
           ) : (
-            <ul className="event__choices">
-              {event.choices.map((c, i) => {
-                const short = cantChoose(run, i, content);
-                return (
+            <>
+              <ul className="event__choices">
+                {event.choices.map((c, i) => (
                   <li key={i}>
-                    <button type="button" className="event-choice" disabled={short !== null} onClick={() => dispatch({ type: "eventChoice", index: i })}>
+                    <button type="button" className="event-choice" disabled={blocked[i] !== null} onClick={() => dispatch({ type: "eventChoice", index: i })}>
                       <strong>{c.label}</strong>
                       <span>{c.detail}</span>
-                      {short && <span className="bad small">{short}</span>}
+                      {blocked[i] && <span className="bad small">{blocked[i]}</span>}
                     </button>
                   </li>
-                );
-              })}
-            </ul>
+                ))}
+              </ul>
+              {blocked.every((reason) => reason !== null) && (
+                <div className="row row--end event__leave">
+                  <button type="button" className="btn" onClick={() => dispatch({ type: "leave" })}>
+                    Leave
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

@@ -16,8 +16,10 @@ import type {
   EventOutcome,
   GameEvent,
   NewRunOptions,
+  RetroCommand,
   RunState,
   Screen,
+  ShopCommand,
 } from "./types";
 import {
   acquireRelic,
@@ -342,53 +344,57 @@ function takeReward(run: RunState, index: number, card: number | undefined, cont
   return null;
 }
 
-function shopCommand(run: RunState, cmd: Command, content: Content, events: GameEvent[]): string | null {
+/** Why a Vendor purchase can't be made now, or null if it can. `shopCommand` refuses with the same reason. */
+export function shopBlocked(run: RunState, cmd: ShopCommand, content: Content): string | null {
   if (run.screen.kind !== "shop") return "Not in a shop";
   const shop = run.screen.shop;
-  const pay = (basePrice: number) => {
-    const price = shopPrice(run, content, basePrice);
-    if (run.cash < price) return false;
-    gainCash(run, -price, events);
-    return true;
-  };
+  const afford = (basePrice: number) => (run.cash < shopPrice(run, content, basePrice) ? "Not enough cash" : null);
+  if (cmd.type === "buyRemoval") {
+    if (shop.removalUsed) return "One removal per visit";
+    if (run.deck.length === 0) return "No cards to remove";
+    return afford(shop.removalBasePrice);
+  }
+  const offer = { buyCard: shop.cards, buyRelic: shop.relics, buyRunbook: shop.runbooks }[cmd.type][cmd.index];
+  if (!offer) return "Not for sale";
+  if (offer.sold) return "Sold";
+  if (cmd.type === "buyRunbook" && !run.runbooks.includes(null)) return "Runbook slots are full";
+  return afford(offer.basePrice);
+}
+
+function shopCommand(run: RunState, cmd: ShopCommand, content: Content, events: GameEvent[]): string | null {
+  const blocked = shopBlocked(run, cmd, content);
+  if (blocked || run.screen.kind !== "shop") return blocked ?? "Not in a shop";
+  const shop = run.screen.shop;
+  const pay = (basePrice: number) => gainCash(run, -shopPrice(run, content, basePrice), events);
   switch (cmd.type) {
     case "buyCard": {
       const offer = shop.cards[cmd.index];
-      if (!offer || offer.sold) return "Not for sale";
-      if (!pay(offer.basePrice)) return "Not enough cash";
+      pay(offer.basePrice);
       offer.sold = true;
       addToDeck(run, offer.card, events);
       return null;
     }
     case "buyRelic": {
       const offer = shop.relics[cmd.index];
-      if (!offer || offer.sold) return "Not for sale";
-      if (!pay(offer.basePrice)) return "Not enough cash";
+      pay(offer.basePrice);
       offer.sold = true;
       acquireRelic(run, offer.relic, content, events);
       return null;
     }
     case "buyRunbook": {
       const offer = shop.runbooks[cmd.index];
-      if (!offer || offer.sold) return "Not for sale";
-      if (!run.runbooks.includes(null)) return "Runbook slots are full";
-      if (!pay(offer.basePrice)) return "Not enough cash";
+      pay(offer.basePrice);
       offer.sold = true;
       addRunbook(run, offer.runbook, events);
       return null;
     }
-    case "buyRemoval": {
-      if (shop.removalUsed) return "Already used";
-      if (run.deck.length === 0) return "No cards to remove";
-      if (!pay(shop.removalBasePrice)) return "Not enough cash";
+    case "buyRemoval":
+      pay(shop.removalBasePrice);
       // The shop keeps its removal price, so backing out can refund it; the next shop charges more.
       run.removals += 1;
       shop.removalUsed = true;
       openDeckChoice(run, "remove", content);
       return null;
-    }
-    default:
-      return "Not in a shop";
   }
 }
 
@@ -398,14 +404,21 @@ export function retroRecoverAmount(run: RunState, content: Content): number {
   return Math.min(run.maxBudget - run.budget, Math.round((run.maxBudget * pct) / 100));
 }
 
-function retroCommand(run: RunState, cmd: Command, content: Content, events: GameEvent[]): string | null {
+/** Why a Retro option can't be taken now, or null if it can. `retroCommand` refuses with the same reason. */
+export function retroBlocked(run: RunState, cmd: RetroCommand, content: Content): string | null {
   if (run.screen.kind !== "retro" || run.screen.done) return "Not at a retro";
+  if (cmd.type === "refactor" && eligibleForDeckChoice(run, "upgrade", content).length === 0) return "No card to refactor";
+  return null;
+}
+
+function retroCommand(run: RunState, cmd: RetroCommand, content: Content, events: GameEvent[]): string | null {
+  const blocked = retroBlocked(run, cmd, content);
+  if (blocked) return blocked;
   if (cmd.type === "rest") {
     recoverBudget(run, retroRecoverAmount(run, content), events);
     run.screen = { kind: "retro", done: true };
     return null;
   }
-  if (eligibleForDeckChoice(run, "upgrade", content).length === 0) return "No card to refactor";
   run.screen = { kind: "retro", done: true };
   openDeckChoice(run, "upgrade", content);
   return null;

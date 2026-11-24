@@ -486,6 +486,11 @@ export type Command =
   | { type: "cancel" }
   | { type: "abandon" };
 
+/** A Vendor purchase. */
+export type ShopCommand = Extract<Command, { type: "buyCard" | "buyRelic" | "buyRunbook" | "buyRemoval" }>;
+/** A Retro option. */
+export type RetroCommand = Extract<Command, { type: "rest" | "refactor" }>;
+
 /** What happened, in order, for animation and sound. The state is already final. */
 export type GameEvent =
   | { type: "combatStart"; encounter: string }
