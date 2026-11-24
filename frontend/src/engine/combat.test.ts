@@ -366,7 +366,7 @@ describe("statuses", () => {
     expect(combat(after).enemies.find((e) => e.key === key)!.load).toBe(94);
   });
 
-  it("an enemy's Buffer absorbs Serve and resets at the start of its turn", () => {
+  it("an enemy's Buffer absorbs Serve and resets at the start of the enemies' turn", () => {
     const { run, key } = arena();
     combat(run).enemies[0].buffer = 4;
     const [serve] = setHand(run, ["serve"]);
@@ -374,6 +374,17 @@ describe("statuses", () => {
     expect(ofType(events, "serve")[0]).toMatchObject({ amount: 6, absorbed: 4 });
     expect(combat(after).enemies[0].load).toBe(98);
     expect(combat(endTurn(after).run).enemies[0].buffer).toBe(0);
+  });
+
+  it("keeps Buffer an ally gave earlier in the enemies' turn until the player's next turn", () => {
+    const run = inCombat("a1noisy");
+    const [noisy, spike] = enemyKeys(run);
+    force(run, noisy, "shield");
+    force(run, spike, "rampUp");
+    setHand(run, []);
+    const c = combat(endTurn(run).run);
+    expect(c.phase).toBe("player");
+    expect(c.enemies.find((e) => e.key === spike)!.buffer).toBe(10);
   });
 
   it("removes debuffs", () => {

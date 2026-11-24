@@ -324,6 +324,7 @@ function endPlayerTurn(ctx: Ctx): boolean {
 function enemyPhase(ctx: Ctx): void {
   const { c } = ctx;
   const degradedBefore = c.statuses.degraded ?? 0;
+  for (const enemy of c.enemies) enemy.buffer = 0;
   for (const key of alive(c).map((e) => e.key)) {
     const enemy = c.enemies.find((e) => e.key === key);
     if (!enemy || enemy.resolved) continue;
@@ -361,7 +362,6 @@ function enemyTurn(ctx: Ctx, enemy: EnemyState): void {
   const { c, run, content } = ctx;
   const throttledBefore = enemy.statuses.throttled ?? 0;
   const exposedBefore = enemy.statuses.exposed ?? 0;
-  enemy.buffer = 0;
   const move = content.enemies[enemy.id]?.moves[enemy.intent.move];
   ctx.events.push({ type: "enemyMove", enemy: enemy.key, move: enemy.intent.move });
   let burns = 0;
