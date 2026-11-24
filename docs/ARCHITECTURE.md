@@ -18,7 +18,7 @@ It makes no network requests and works from a sub-path inside an iframe, as itch
 3. The store saves the new state, then hands the events to the UI for animation and to audio for sound.
 
 The UI never computes an outcome.
-Card text, costs, playability and reachable map nodes all come from the engine.
+Card text, costs, playability, reachable map nodes and what the Vendor, Retro and events allow all come from the engine.
 
 ## Rules for the engine
 

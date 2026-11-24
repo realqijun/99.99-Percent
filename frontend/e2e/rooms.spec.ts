@@ -72,6 +72,28 @@ test("Cloud Credits bought at the Vendor lowers its other prices at once", async
   await expect(game.getByText(`You have ${250 - discounted} cash.`)).toBeVisible();
 });
 
+test("the Vendor says why an item can't be bought", async ({ page }) => {
+  const run = enter({ ...engineRun({ seed: "SHOP" }), cash: 60, runbooks: ["scaleUp", "scaleUp", "scaleUp"] }, "vendor");
+  if (run.screen.kind !== "shop") throw new Error("not in a shop");
+  const { shop } = run.screen;
+  const card = shop.cards.find((offer) => shopPrice(run, offer.basePrice) > 60)!;
+  const game = await openGame(page, { storage: saved(run) });
+  await game.getByRole("button", { name: "Continue" }).click();
+
+  const buyCard = game.getByRole("button", { name: startsWith(`Buy ${CONTENT.cards[card.card.id].name}, `) });
+  await expect(buyCard).toBeDisabled();
+  await expect(buyCard).toHaveAccessibleName(/\. Not enough cash\.$/);
+  await expect(game.getByRole("listitem").filter({ has: buyCard })).toContainText("Not enough cash");
+  const relic = game.getByRole("button", { name: startsWith(`Buy ${CONTENT.relics[shop.relics[0].relic].name}, `) });
+  await expect(relic).toBeDisabled();
+  await expect(relic).toContainText("Not enough cash");
+  const runbook = game.getByRole("button", { name: startsWith(`Buy ${CONTENT.runbooks[shop.runbooks[0].runbook].name}, `) });
+  await expect(runbook).toBeDisabled();
+  await expect(runbook).toContainText("Runbook slots are full");
+  await expect(game.getByRole("button", { name: `Remove for ${shopPrice(run, shop.removalBasePrice)}` })).toBeDisabled();
+  await expect(game.getByRole("region", { name: "Remove a card" })).toContainText("Not enough cash");
+});
+
 /** A run on a Retro with some Error Budget missing. */
 function atRetro(seed: string): RunState {
   return enter({ ...engineRun({ seed }), budget: 30 }, "retro");
@@ -114,6 +136,18 @@ test("a Retro Refactor upgrades the chosen card, with a preview", async ({ page 
   await expect(game.getByRole("dialog", { name: "Deck (10)" }).getByRole("listitem", { name: /^Serve\+, Serve/ })).toHaveCount(1);
 });
 
+test("a Retro can't Refactor when every card is upgraded, and says why", async ({ page }) => {
+  const run = atRetro("REFACTOR");
+  for (const card of run.deck) card.upgraded = true;
+  const game = await openGame(page, { storage: saved(run) });
+  await game.getByRole("button", { name: "Continue" }).click();
+
+  const refactor = game.getByRole("button", { name: /^Refactor/ });
+  await expect(refactor).toBeDisabled();
+  await expect(refactor).toContainText("No card to refactor");
+  await expect(game.getByRole("button", { name: /^Rest/ })).toBeEnabled();
+});
+
 test("an event plays out its lines, takes a choice and shows the reply", async ({ page }) => {
   const run = enter({ ...engineRun({ seed: "EVENT" }), cash: 300 }, "event");
   if (run.screen.kind !== "event") throw new Error("not at an event");
@@ -154,6 +188,24 @@ test("an event choice that would do nothing is blocked with the reason", async (
   await expect(fix).toBeDisabled();
   await expect(fix).toContainText("No card to upgrade");
   await expect(talk.getByRole("button", { name: startsWith("Write a macro reply") })).toBeEnabled();
+});
+
+test("an event with every choice blocked can be left from the keyboard", async ({ page }) => {
+  const run = enter({ ...engineRun({ seed: "EVENT" }), budget: 8, runbooks: ["scaleUp", "scaleUp", "scaleUp"] }, "event");
+  run.screen = { kind: "event", event: "enterpriseCall", chosen: null };
+  const event = CONTENT.events.enterpriseCall;
+  const game = await openGame(page, { storage: saved(run) });
+  await game.getByRole("button", { name: "Continue" }).click();
+
+  const talk = game.getByRole("region", { name: event.title });
+  for (let i = 1; i < event.lines.length; i++) await talk.getByRole("button", { name: "Next" }).click();
+  await expect(talk.getByRole("button", { name: startsWith("Join the call") })).toContainText("Needs more than 8 Error Budget");
+  await expect(talk.getByRole("button", { name: startsWith("Join the call") })).toBeDisabled();
+  await expect(talk.getByRole("button", { name: startsWith("Send them a runbook") })).toBeDisabled();
+  const leave = talk.getByRole("button", { name: "Leave" });
+  await expect(leave).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(game.getByRole("heading", { name: "Act 1" })).toBeVisible();
 });
 
 test("beating a boss offers boss relics, then the next act's map", async ({ page }) => {

@@ -229,10 +229,12 @@ Shop cards are 55% common, 35% uncommon and 10% rare.
 
 A Retro rest recovers 30% of max Error Budget (20% at 99.999%), plus any relic bonus, rounded to the nearest.
 You can back out of a Refactor before picking the card, and the Retro is open again.
+With no card left to upgrade, Refactor can't be picked.
 A card an event asks you to pick can't be backed out of, since its cost is already paid.
 A choice that needs N Error Budget needs more than N, so paying it can't breach the SLA.
 A choice that needs N cash needs at least N.
 A choice that would do nothing can't be made, for example upgrading a card with none left to upgrade, or gaining a runbook with every slot full.
+When no choice can be made, the event can be left without one.
 
 ## Difficulty
 

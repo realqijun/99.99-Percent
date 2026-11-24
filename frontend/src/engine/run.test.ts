@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, canCancelDeckChoice, cantChoose, newRun, reachableNodes, retroRecoverAmount, shopPrice, validateRun } from "./index";
+import { applyCommand, canCancelDeckChoice, cantBuy, cantChoose, cantRetro, newRun, reachableNodes, retroRecoverAmount, shopPrice, validateRun } from "./index";
 import { BOSS_NODE, FLOORS } from "./map";
 import { cardChoices, combatRewards, makeShop } from "./rewards";
 import { rand } from "./rng";
 import { apply, candidateCommands, combat, FIXTURE, fixtureRun, ofType, setHand } from "./__fixtures__/helpers";
-import type { Command, RunState, Screen } from "./types";
+import type { Command, RunState, Screen, ShopCommand } from "./types";
 
 /** Wins the current combat at once. */
 function winWithEvents(run: RunState) {
@@ -263,7 +263,7 @@ describe("vendor", () => {
     const bought = apply(run, { type: "buyCard", index: 0 }).run;
     expect(bought.cash).toBe(99 - offer.basePrice);
     expect(bought.deck.at(-1)).toEqual(offer.card);
-    expect(applyCommand(bought, { type: "buyCard", index: 0 }, FIXTURE).error).toBe("Not for sale");
+    expect(applyCommand(bought, { type: "buyCard", index: 0 }, FIXTURE).error).toBe("Sold");
     run.cash = 10;
     expect(applyCommand(run, { type: "buyRelic", index: 0 }, FIXTURE).error).toBe("Not enough cash");
     run.cash = 200;
@@ -274,11 +274,37 @@ describe("vendor", () => {
     run = apply(run, { type: "chooseCards", uids: [card.uid] }).run;
     expect(run.deck.some((c) => c.uid === card.uid)).toBe(false);
     expect(run.screen).toMatchObject({ kind: "shop", shop: { removalUsed: true } });
-    expect(applyCommand(run, { type: "buyRemoval" }, FIXTURE).error).toBe("Already used");
+    expect(applyCommand(run, { type: "buyRemoval" }, FIXTURE).error).toBe("One removal per visit");
     expect(makeShop(run, FIXTURE).removalBasePrice).toBe(100);
     run.runbooks = ["scaleUp", "scaleUp", "scaleUp"];
     expect(applyCommand(run, { type: "buyRunbook", index: 0 }, FIXTURE).error).toBe("Runbook slots are full");
     expect(apply(run, { type: "leave" }).run.screen).toEqual({ kind: "map" });
+  });
+
+  it("says why a purchase can't be made, matching what the command refuses", () => {
+    const commands: ShopCommand[] = [
+      ...[0, 1, 9].flatMap((index): ShopCommand[] => [{ type: "buyCard", index }, { type: "buyRelic", index }, { type: "buyRunbook", index }]),
+      { type: "buyRemoval" },
+    ];
+    const rich = shopRun();
+    rich.cash = 1000;
+    const poor = shopRun();
+    poor.cash = 0;
+    const full = shopRun();
+    full.cash = 1000;
+    full.runbooks = ["scaleUp", "scaleUp", "scaleUp"];
+    const used = apply(apply(rich, { type: "buyCard", index: 0 }).run, { type: "buyRemoval" }).run;
+    const back = apply(used, { type: "chooseCards", uids: [used.deck[0].uid] }).run;
+    for (const run of [rich, poor, full, back, fixtureRun()]) {
+      for (const cmd of commands) expect(cantBuy(run, cmd, FIXTURE), JSON.stringify(cmd)).toBe(applyCommand(run, cmd, FIXTURE).error ?? null);
+    }
+    expect(cantBuy(rich, { type: "buyRelic", index: 0 }, FIXTURE)).toBeNull();
+    expect(cantBuy(poor, { type: "buyRelic", index: 0 }, FIXTURE)).toBe("Not enough cash");
+    expect(cantBuy(full, { type: "buyRunbook", index: 0 }, FIXTURE)).toBe("Runbook slots are full");
+    expect(cantBuy(back, { type: "buyCard", index: 0 }, FIXTURE)).toBe("Sold");
+    expect(cantBuy(back, { type: "buyRemoval" }, FIXTURE)).toBe("One removal per visit");
+    expect(cantBuy(rich, { type: "buyCard", index: 9 }, FIXTURE)).toBe("Not for sale");
+    expect(cantBuy(fixtureRun(), { type: "buyRemoval" }, FIXTURE)).toBe("Not in a shop");
   });
 
   it("backs out of a removal before a card is picked, with the price refunded", () => {
@@ -354,6 +380,22 @@ describe("retro", () => {
     run = apply(run, { type: "chooseCards", uids: [run.deck[0].uid] }).run;
     expect(run.deck[0].upgraded).toBe(true);
     expect(run.screen).toEqual({ kind: "retro", done: true });
+  });
+
+  it("says why an option can't be taken, matching what the command refuses", () => {
+    const open = enter(fixtureRun(), { kind: "retro", done: false });
+    const polished = enter(fixtureRun(), { kind: "retro", done: false });
+    for (const card of polished.deck) card.upgraded = true;
+    const done = apply(open, { type: "rest" }).run;
+    for (const run of [open, polished, done, fixtureRun()]) {
+      for (const cmd of [{ type: "rest" }, { type: "refactor" }] as const) {
+        expect(cantRetro(run, cmd, FIXTURE)).toBe(applyCommand(run, cmd, FIXTURE).error ?? null);
+      }
+    }
+    expect(cantRetro(open, { type: "refactor" }, FIXTURE)).toBeNull();
+    expect(cantRetro(polished, { type: "refactor" }, FIXTURE)).toBe("No card to refactor");
+    expect(cantRetro(polished, { type: "rest" }, FIXTURE)).toBeNull();
+    expect(cantRetro(done, { type: "rest" }, FIXTURE)).toBe("Not at a retro");
   });
 
   it("backs out of a Refactor before a card is picked, and the Retro is still open", () => {
@@ -460,6 +502,8 @@ describe("events", () => {
     // A full slot can be freed, and then the runbook can be taken.
     const freed = apply(at("vendorDemo", full), { type: "discardRunbook", slot: 0 }).run;
     expect(cantChoose(freed, 0, FIXTURE)).toBeNull();
+    // An event can be left without a choice, for when every choice is blocked.
+    expect(apply(at("vendorDemo", full), { type: "leave" }).run.screen).toEqual({ kind: "map" });
   });
 
   it("picks an unseen event for the act at an event node", () => {
