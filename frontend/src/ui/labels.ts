@@ -34,7 +34,7 @@ export const INTENTS: Record<IntentKind, string> = {
   defend: "Adds Buffer",
   buff: "Buffs incidents",
   debuff: "Debuffs you",
-  failure: "Node Failure: disables your infrastructure",
+  failure: "Node Failure: disables a piece of your infrastructure",
   summon: "Calls for backup",
   unknown: "Unknown",
 };
@@ -58,18 +58,18 @@ export const STATUSES: Record<StatusId, { name: string; text: string; bad: boole
 };
 
 export const INFRA: Record<InfraId, { name: string; text: string }> = {
-  readCache: { name: "Read Cache", text: "Each turn, gain Capacity equal to its warmth, then warmth rises by 1." },
+  readCache: { name: "Read Cache", text: "Each turn, gain Capacity equal to its warmth times its stacks, halved in write-heavy encounters. Then warmth rises by 1, up to its limit of 6." },
   cacheTuning: { name: "Cache Tuning", text: "Raises the Read Cache warmth limit by 2 per stack." },
   loadBalancer: { name: "Load Balancer", text: "Routes App Servers. Without it they do nothing." },
   appServer: { name: "App Server", text: "With a Load Balancer, gain 4 Capacity per stack each turn." },
   autoscaler: { name: "Autoscaler", text: "Gain Capacity equal to the Error Budget you lost last round, up to 6 per stack." },
   cdn: { name: "CDN", text: "Gain 2 Capacity per stack each turn." },
   messageQueue: { name: "Message Queue", text: "Keep up to 5 unused Capacity per stack for the next turn." },
-  readReplica: { name: "Read Replica", text: "Each turn, Serve a random enemy for 3 per stack." },
+  readReplica: { name: "Read Replica", text: "Each turn, Serve a random enemy for 3 per stack, halved in write-heavy encounters." },
   healthChecks: { name: "Health Checks", text: "Node Failures last 1 turn instead of 2." },
   failover: { name: "Failover", text: "Ignores the next Node Failure, once per stack." },
-  circuitBreaker: { name: "Circuit Breaker", text: "When an enemy burns your Error Budget, it gets Throttled 1 per stack." },
-  autoRemediation: { name: "Auto Remediation", text: "Each turn, remove 1 stack of one debuff per stack." },
+  circuitBreaker: { name: "Circuit Breaker", text: "Each enemy hit that burns your Error Budget gives that enemy Throttled 1 per stack." },
+  autoRemediation: { name: "Auto Remediation", text: "Each turn, lower your largest debuff by 1, once per stack." },
   onCall: { name: "On-Call Rotation", text: "When you draw a Pager, draw 1 and gain 3 Capacity, per stack." },
 };
 
