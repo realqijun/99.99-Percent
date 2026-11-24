@@ -6,7 +6,8 @@ import type { RunState } from "./types";
 const roundTrip = (run: RunState): unknown => JSON.parse(JSON.stringify(run));
 
 describe("validateRun", () => {
-  it("accepts saves from every screen after a JSON round trip, and play continues identically", () => {
+  // A whole run with a deep compare at every step; the default 5 second timeout is too tight under coverage.
+  it("accepts saves from every screen after a JSON round trip, and play continues identically", { timeout: 120_000 }, () => {
     const { commands, start } = playRandomly("save", "jordan", 0, { budget: 3000 });
     const step = (r: RunState, i: number) => applyCommand(r, commands[i], FIXTURE).run;
     let run = start;
@@ -15,8 +16,9 @@ describe("validateRun", () => {
       kinds.add(run.screen.kind);
       const saved = validateRun(roundTrip(run), FIXTURE);
       expect(saved, `${i} ${run.screen.kind}`).toEqual(run);
-      expect(step(saved!, i)).toEqual(step(run, i));
-      run = step(run, i);
+      const next = step(run, i);
+      expect(step(saved!, i)).toEqual(next);
+      run = next;
     }
     expect(validateRun(roundTrip(run), FIXTURE)).toEqual(run);
     for (const kind of ["map", "combat", "reward", "shop", "retro", "event", "treasure", "bossRelic", "deckChoice"]) expect(kinds).toContain(kind);
