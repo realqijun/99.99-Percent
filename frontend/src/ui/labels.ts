@@ -5,7 +5,7 @@ export const DIFFICULTIES: { level: Difficulty; label: string; adds: string }[] 
   { level: 0, label: "99%", adds: "Base rules." },
   { level: 1, label: "99.9%", adds: "Major Incidents have 25% more Load." },
   { level: 2, label: "99.99%", adds: "Incidents have 10% more Load. You start with a Tech Debt." },
-  { level: 3, label: "99.999%", adds: "Bosses have 20% more Load. A Retro recovers 20%." },
+  { level: 3, label: "99.999%", adds: "Bosses have 15% more Load. A Retro recovers 20%." },
 ];
 
 export const difficultyLabel = (d: Difficulty) => DIFFICULTIES[d].label;

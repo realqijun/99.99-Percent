@@ -244,7 +244,7 @@ Each level adds to the ones below it.
 | 99% | Base rules |
 | 99.9% | Major Incidents have 25% more Load. |
 | 99.99% | Incidents have 10% more Load, and you start with a Tech Debt in your deck. |
-| 99.999% | Bosses have 20% more Load, and a Retro recovers 20% instead of 30%. |
+| 99.999% | Bosses have 15% more Load, and a Retro recovers 20% instead of 30%. |
 
 Extra Load applies to every enemy in that kind of encounter, summoned ones included, and is rounded to the nearest.
 Winning a run with a character unlocks the next level for that character.

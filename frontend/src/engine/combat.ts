@@ -36,7 +36,7 @@ export const TUTORIAL_STEPS = 4;
 export function loadMultiplier(tier: Tier, difficulty: number): number {
   if (tier === "elite" && difficulty >= 1) return 1.25;
   if (tier === "normal" && difficulty >= 2) return 1.1;
-  if (tier === "boss" && difficulty >= 3) return 1.2;
+  if (tier === "boss" && difficulty >= 3) return 1.15;
   return 1;
 }
 

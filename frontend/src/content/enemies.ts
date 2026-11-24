@@ -34,7 +34,7 @@ const LIST: Def[] = [
     description: "A sudden pile of requests. Loud, simple and over soon.",
   },
   {
-    id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [18, 22],
+    id: "botCrawler", name: "Bot Crawler", tier: "normal", load: [19, 23],
     moves: {
       crawl: { name: "Crawl Every Page", effects: [hit(4, 3)] },
       scrape: { name: "Scrape", effects: [hit(8), onPlayer("degraded", 1)] },

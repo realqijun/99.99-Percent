@@ -60,7 +60,7 @@ describe("combat start", () => {
 
   it("scales enemy Load by difficulty and tier", () => {
     const load = (encounter: string, difficulty: 0 | 1 | 2 | 3) => combat(inCombat(encounter, () => {}, { difficulty, seed: "load" })).enemies[0].maxLoad;
-    expect(load("a1boss", 3)).toBe(Math.round(80 * 1.2));
+    expect(load("a1boss", 3)).toBe(Math.round(80 * 1.15));
     expect(load("a1boss", 2)).toBe(80);
     expect(load("a1flaky", 1)).toBe(Math.round(load("a1flaky", 0) * 1.25));
     expect(load("a1spike", 2)).toBe(Math.round(load("a1spike", 1) * 1.1));
