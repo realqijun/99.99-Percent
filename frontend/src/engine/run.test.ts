@@ -469,6 +469,32 @@ describe("treasure, bosses and acts", () => {
     expect(act2.stats.bossesWon).toBe(1);
   });
 
+  it("the path taken through an act doesn't change the next act's map or boss", () => {
+    const fights = new Set(["incident", "major"]);
+    /** Climbs Act 1 by real commands, preferring fight nodes or avoiding them, then beats the boss. */
+    const climb = (preferFights: boolean) => {
+      let run = fixtureRun({ seed: "paths" });
+      let fought = 0;
+      while (run.act === 1) {
+        if (run.screen.kind === "map") {
+          const options = reachableNodes(run);
+          const node = options.find((id) => fights.has(run.map.nodes[id].kind) === preferFights) ?? options[0];
+          run = apply(run, { type: "chooseNode", node }).run;
+        } else if (run.screen.kind === "combat") {
+          fought += 1;
+          run = win(run);
+        } else if (run.screen.kind === "bossRelic") run = apply(run, { type: "pickBossRelic", index: 0 }).run;
+        else run = apply(run, { type: "leave" }).run;
+      }
+      return { run, fought };
+    };
+    const a = climb(true);
+    const b = climb(false);
+    expect(a.fought).not.toBe(b.fought);
+    expect(a.run.map).toEqual(b.run.map);
+    expect(a.run.map.boss).toBe(b.run.map.boss);
+  });
+
   it("beating the Act 3 boss wins the run", () => {
     let run = fixtureRun();
     run.act = 3;

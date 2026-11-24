@@ -34,7 +34,7 @@ import {
   STARTING_CASH,
 } from "./util";
 
-export const RUN_VERSION = 1;
+export const RUN_VERSION = 2;
 export const TUTORIAL_ENCOUNTER = "tutorial";
 
 export function createRun(opts: NewRunOptions, content: Content): RunState {
@@ -120,26 +120,26 @@ function pickEvent(run: RunState, content: Content): EventDef | undefined {
 
 function enterNode(run: RunState, nodeId: string, content: Content, events: GameEvent[]): string | null {
   const node = run.map.nodes[nodeId];
-  const fight = (tier: "normal" | "elite") => {
+  const fight = (tier: "normal" | "elite", rolled: string | undefined) => {
     const tutorial = tier === "normal" && run.tutorial === true;
     delete run.tutorial;
-    const encounter = tutorial && content.encounters[TUTORIAL_ENCOUNTER] ? TUTORIAL_ENCOUNTER : pickEncounter(run.rng, content, run.act, tier);
+    const encounter = tutorial && content.encounters[TUTORIAL_ENCOUNTER] ? TUTORIAL_ENCOUNTER : rolled;
     if (!encounter) return "No encounter available";
     startCombat(run, encounter, content, events, tutorial);
     return null;
   };
   switch (node.kind) {
     case "incident":
-      return fight("normal");
+      return fight("normal", node.encounter);
     case "major":
-      return fight("elite");
+      return fight("elite", node.encounter);
     case "boss":
       if (!content.encounters[run.map.boss]) return "No boss encounter";
       startCombat(run, run.map.boss, content, events, false);
       return null;
     case "event": {
       const event = pickEvent(run, content);
-      if (!event) return fight("normal");
+      if (!event) return fight("normal", pickEncounter(run.rng, "events", content, run.act, "normal"));
       run.seenEvents.push(event.id);
       run.screen = { kind: "event", event: event.id, chosen: null };
       return null;

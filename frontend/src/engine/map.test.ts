@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reachableNodes } from "./index";
-import { BOSS_NODE, COLUMNS, FLOORS, generateMap, NO_REPEAT } from "./map";
+import { BOSS_NODE, COLUMNS, FIGHT_TIERS, FLOORS, generateMap, NO_REPEAT } from "./map";
 import { seedStreams } from "./rng";
 import { FIXTURE, fixtureRun } from "./__fixtures__/helpers";
 import type { ActMap } from "./types";
@@ -32,6 +32,9 @@ describe("map generation", () => {
         if (node.floor === FLOORS - 1) expect(node.kind).not.toBe("retro");
         if (node.floor < 6) expect(node.kind).not.toBe("major");
         if (node.floor <= FLOORS && node.kind === "boss") throw new Error("boss below the top");
+        const tier = FIGHT_TIERS[node.kind];
+        if (tier) expect(FIXTURE.encounters[node.encounter!]).toMatchObject({ act: map.act, tier });
+        else expect(node.encounter).toBeUndefined();
         for (const child of node.next) {
           const c = map.nodes[child];
           expect(c.floor).toBe(node.floor + 1);

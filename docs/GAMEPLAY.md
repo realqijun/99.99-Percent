@@ -177,7 +177,7 @@ Six paths start on floor 1, the first two in different columns.
 Each path climbs one floor at a time, moves at most one column left or right, and never crosses another path.
 Every floor 15 node leads to the boss.
 Nodes without a fixed kind are picked by weight: Incident 50, Event 22, Retro 12, Major Incident 10, Vendor 6, leaving out kinds the rules forbid there.
-The boss and each Incident or Major Incident encounter are picked by weight from the act's encounters.
+The boss and each Incident or Major Incident encounter are picked by weight from the act's encounters when the map is made, so the path you take doesn't change them or the next act's map.
 An Event node holds an event for the act you haven't seen yet, if one is left; if the act has none, it is an Incident.
 
 ### Rewards

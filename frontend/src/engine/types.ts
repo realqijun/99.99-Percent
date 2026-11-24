@@ -367,6 +367,8 @@ export interface MapNode {
   col: number; // 0..6
   kind: NodeKind;
   next: string[];
+  /** Incident and Major Incident nodes: the encounter, rolled with the map. */
+  encounter?: string;
 }
 
 export interface ActMap {
@@ -418,6 +420,7 @@ export interface RunStats {
 export interface RngStreams {
   map: number;
   shuffle: number;
+  targets: number;
   cards: number;
   ai: number;
   events: number;

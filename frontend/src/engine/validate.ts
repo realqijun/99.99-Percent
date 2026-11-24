@@ -2,8 +2,9 @@
  * Structural check of a saved run. Every field is checked, unknown keys are refused,
  * and every id must exist in the content.
  */
+import { FIGHT_TIERS } from "./map";
 import { STREAMS } from "./rng";
-import type { Content, RunState } from "./types";
+import type { Content, MapNode, RunState } from "./types";
 
 type Check = (x: unknown) => boolean;
 
@@ -161,10 +162,20 @@ function checks(content: Content, version: number) {
       summary: {},
     })(x);
 
-  const mapNode = shape({ id: str, floor: (x) => int(x) && (x as number) >= 1 && (x as number) <= 16, col: (x) => int(x) && (x as number) >= 0 && (x as number) <= 6, kind: oneOf(...NODE_KINDS), next: list(str) });
+  const mapNode = shape(
+    { id: str, floor: (x) => int(x) && (x as number) >= 1 && (x as number) <= 16, col: (x) => int(x) && (x as number) >= 0 && (x as number) <= 6, kind: oneOf(...NODE_KINDS), next: list(str) },
+    { encounter: idIn(content.encounters) },
+  );
+  /** Fight nodes hold an encounter of their tier; other nodes hold none. */
+  const nodeEncounter = (node: MapNode) => {
+    const tier = FIGHT_TIERS[node.kind];
+    return tier ? node.encounter !== undefined && content.encounters[node.encounter].tier === tier : node.encounter === undefined;
+  };
   const map = (x: unknown) =>
     shape({ act: oneOf(1, 2, 3), nodes: record(str, mapNode), boss: idIn(content.encounters) })(x) &&
-    Object.entries((x as RunState["map"]).nodes).every(([id, node]) => node.id === id && node.next.every((n) => Object.hasOwn((x as RunState["map"]).nodes, n)));
+    Object.entries((x as RunState["map"]).nodes).every(
+      ([id, node]) => node.id === id && nodeEncounter(node) && node.next.every((n) => Object.hasOwn((x as RunState["map"]).nodes, n)),
+    );
 
   const stats = shape({
     floorsClimbed: nat, combatsWon: nat, elitesWon: nat, bossesWon: nat, budgetLost: nat, cashEarned: nat, cardsPlayed: nat, turns: nat,

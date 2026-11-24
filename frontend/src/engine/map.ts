@@ -1,7 +1,7 @@
 /*
  * Act maps: 15 floors on a 7-column grid, then the boss. Rules are in docs/GAMEPLAY.md (Map generation).
  */
-import { intRange, weightedPick } from "./rng";
+import { intRange, weightedPick, type StreamName } from "./rng";
 import type { Act, ActMap, Content, MapNode, NodeKind, RngStreams, RunState, Tier } from "./types";
 
 export const FLOORS = 15;
@@ -23,12 +23,15 @@ export const NO_REPEAT: NodeKind[] = ["major", "vendor", "retro"];
 
 const nodeId = (floor: number, col: number) => `${floor}-${col}`;
 
-/** Picks an encounter of an act and tier by weight from the map stream. */
-export function pickEncounter(rng: RngStreams, content: Content, act: Act, tier: Tier): string | undefined {
+/** Picks an encounter of an act and tier by weight. Only map generation may use the map stream. */
+export function pickEncounter(rng: RngStreams, stream: StreamName, content: Content, act: Act, tier: Tier): string | undefined {
   const all = Object.values(content.encounters).filter((e) => e.tier === tier && e.id !== "tutorial");
   const inAct = all.filter((e) => e.act === act);
-  return weightedPick(rng, "map", (inAct.length > 0 ? inAct : all).map((e) => [e.id, e.weight] as const));
+  return weightedPick(rng, stream, (inAct.length > 0 ? inAct : all).map((e) => [e.id, e.weight] as const));
 }
+
+/** The encounter tier each fight node holds. */
+export const FIGHT_TIERS: Partial<Record<NodeKind, Tier>> = { incident: "normal", major: "elite" };
 
 export function generateMap(rng: RngStreams, content: Content, act: Act): ActMap {
   // Lay out paths that move up one floor at a time, one column at most, without crossing.
@@ -84,7 +87,14 @@ export function generateMap(rng: RngStreams, content: Content, act: Act): ActMap
     const node = nodes[id];
     node.kind = kindFor(rng, node, parents.get(id) ?? []);
   }
-  return { act, nodes, boss: pickEncounter(rng, content, act, "boss") ?? "" };
+  const boss = pickEncounter(rng, "map", content, act, "boss") ?? "";
+  // Roll every fight now, so the path taken can't change what later maps hold.
+  for (const id of ids) {
+    const tier = FIGHT_TIERS[nodes[id].kind];
+    const encounter = tier && pickEncounter(rng, "map", content, act, tier);
+    if (encounter) nodes[id].encounter = encounter;
+  }
+  return { act, nodes, boss };
 }
 
 function kindFor(rng: RngStreams, node: MapNode, parents: MapNode[]): NodeKind {

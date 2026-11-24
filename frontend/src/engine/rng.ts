@@ -37,13 +37,15 @@ export function normaliseSeed(input: number | string): number {
 }
 
 // ---------- named streams in RunState.rng ----------
-// map: map layout and the encounter a node holds. shuffle: draw pile order and the player's random targets.
+// map: map layout, each fight node's encounter and the boss, all rolled when the act's map is made.
+// shuffle: draw pile order. targets: the player's random enemy targets.
 // cards: card choices in rewards and the shop. ai: enemy Load, moves and Node Failure targets.
-// events: which event a node holds and its random outcomes. rewards: cash, relics, runbooks and prices.
+// events: which event a node holds, its random outcomes, and the fight an event node turns into.
+// rewards: cash, relics, runbooks and prices.
 
 export type StreamName = keyof RngStreams;
 
-export const STREAMS: readonly StreamName[] = ["map", "shuffle", "cards", "ai", "events", "rewards"];
+export const STREAMS: readonly StreamName[] = ["map", "shuffle", "targets", "cards", "ai", "events", "rewards"];
 
 export function seedStreams(seed: string): RngStreams {
   const rng = {} as RngStreams;
