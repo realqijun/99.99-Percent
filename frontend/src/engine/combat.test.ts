@@ -48,6 +48,16 @@ describe("combat start", () => {
     expect([...c.hand, ...c.drawPile].filter((h) => h.id === "configDrift")).toHaveLength(1);
   });
 
+  it("keeps Innate cards in the opening hand when drawbacks add cards to the draw pile", () => {
+    for (let i = 0; i < 20; i++) {
+      const run = inCombat("a1spike", (r) => {
+        r.deck = Array.from({ length: 12 }, (_, j) => ({ uid: 100 + j, id: j < 5 ? "harden" : "serve", upgraded: false }));
+        r.relics.push({ id: "extraHands", counter: 0 });
+      }, { character: "taylor", seed: `innate${i}` });
+      expect(combat(run).hand.map((h) => h.id), `seed innate${i}`).toEqual(Array(5).fill("harden"));
+    }
+  });
+
   it("scales enemy Load by difficulty and tier", () => {
     const load = (encounter: string, difficulty: 0 | 1 | 2 | 3) => combat(inCombat(encounter, () => {}, { difficulty, seed: "load" })).enemies[0].maxLoad;
     expect(load("a1boss", 3)).toBe(Math.round(80 * 1.2));
@@ -366,7 +376,7 @@ describe("statuses", () => {
     expect(combat(after).enemies.find((e) => e.key === key)!.load).toBe(94);
   });
 
-  it("an enemy's Buffer absorbs Serve and resets at the start of its turn", () => {
+  it("an enemy's Buffer absorbs Serve and resets at the start of the enemies' turn", () => {
     const { run, key } = arena();
     combat(run).enemies[0].buffer = 4;
     const [serve] = setHand(run, ["serve"]);
@@ -374,6 +384,17 @@ describe("statuses", () => {
     expect(ofType(events, "serve")[0]).toMatchObject({ amount: 6, absorbed: 4 });
     expect(combat(after).enemies[0].load).toBe(98);
     expect(combat(endTurn(after).run).enemies[0].buffer).toBe(0);
+  });
+
+  it("keeps Buffer an ally gave earlier in the enemies' turn until the player's next turn", () => {
+    const run = inCombat("a1noisy");
+    const [noisy, spike] = enemyKeys(run);
+    force(run, noisy, "shield");
+    force(run, spike, "rampUp");
+    setHand(run, []);
+    const c = combat(endTurn(run).run);
+    expect(c.phase).toBe("player");
+    expect(c.enemies.find((e) => e.key === spike)!.buffer).toBe(10);
   });
 
   it("removes debuffs", () => {

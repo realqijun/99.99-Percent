@@ -93,18 +93,19 @@ export function startCombat(run: RunState, encounterId: string, content: Content
   events.push({ type: "combatStart", encounter: encounterId });
   for (const id of encounter.enemies) if (content.enemies[id]) c.enemies.push(makeEnemy(ctx, id));
 
-  const deck = shuffled(run.rng, "shuffle", run.deck).map((card) => ({ ...card }));
-  const innate = (card: CardInstance) => {
-    const def = content.cards[card.id];
-    return def !== undefined && hasKeyword(cardStats(def, card.upgraded), "innate");
-  };
-  c.drawPile = [...deck.filter(innate), ...deck.filter((card) => !innate(card))];
-
+  c.drawPile = shuffled(run.rng, "shuffle", run.deck).map((card) => ({ ...card }));
   fireRelics(ctx, "combatStart");
   for (const relic of run.relics) {
     const drawback = content.relics[relic.id]?.drawback;
     if (drawback) resolveEffects(ctx, drawback, { kind: "relic", id: relic.id });
   }
+
+  // Innate cards go on top after combat-start effects, so cards those add can't push them out of the opening hand.
+  const innate = (card: CardInstance) => {
+    const def = content.cards[card.id];
+    return def !== undefined && hasKeyword(cardStats(def, card.upgraded), "innate");
+  };
+  c.drawPile = [...c.drawPile.filter(innate), ...c.drawPile.filter((card) => !innate(card))];
   startPlayerTurn(ctx);
 }
 
@@ -324,6 +325,7 @@ function endPlayerTurn(ctx: Ctx): boolean {
 function enemyPhase(ctx: Ctx): void {
   const { c } = ctx;
   const degradedBefore = c.statuses.degraded ?? 0;
+  for (const enemy of c.enemies) enemy.buffer = 0;
   for (const key of alive(c).map((e) => e.key)) {
     const enemy = c.enemies.find((e) => e.key === key);
     if (!enemy || enemy.resolved) continue;
@@ -361,7 +363,6 @@ function enemyTurn(ctx: Ctx, enemy: EnemyState): void {
   const { c, run, content } = ctx;
   const throttledBefore = enemy.statuses.throttled ?? 0;
   const exposedBefore = enemy.statuses.exposed ?? 0;
-  enemy.buffer = 0;
   const move = content.enemies[enemy.id]?.moves[enemy.intent.move];
   ctx.events.push({ type: "enemyMove", enemy: enemy.key, move: enemy.intent.move });
   let burns = 0;

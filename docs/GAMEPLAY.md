@@ -69,7 +69,7 @@ An enemy with phases picks its phase from its Load when it picks a move, and a n
 - **Incoming requests** go to Capacity first. Whatever Capacity can't absorb burns Error Budget.
 - **Serve** reduces an enemy's Load. An enemy whose Load reaches 0 is resolved.
 - Combat is won when every enemy is resolved.
-- An enemy's **Buffer** absorbs Serve before its Load does, and resets at the start of that enemy's turn.
+- An enemy's **Buffer** absorbs Serve before its Load does, and resets when the enemies' turn starts, so Buffer gained during the enemies' turn lasts through your next turn.
 
 ### Workload
 
