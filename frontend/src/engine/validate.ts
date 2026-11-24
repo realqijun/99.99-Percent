@@ -142,10 +142,10 @@ function checks(content: Content, version: number) {
     runbook: { runbook: idIn(content.runbooks), taken: bool },
   });
   const shop = shape({
-    cards: list(shape({ card, price: nat, sold: bool })),
-    relics: list(shape({ relic: idIn(content.relics), price: nat, sold: bool })),
-    runbooks: list(shape({ runbook: idIn(content.runbooks), price: nat, sold: bool })),
-    removalPrice: nat,
+    cards: list(shape({ card, basePrice: nat, sold: bool })),
+    relics: list(shape({ relic: idIn(content.relics), basePrice: nat, sold: bool })),
+    runbooks: list(shape({ runbook: idIn(content.runbooks), basePrice: nat, sold: bool })),
+    removalBasePrice: nat,
     removalUsed: bool,
   });
   const screen: Check = (x) =>

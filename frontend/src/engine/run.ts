@@ -4,7 +4,7 @@
 import { activateRunbook, chooseInCombat, endTurn, playCard, settleCombat, startCombat, TUTORIAL_STEPS } from "./combat";
 import { fireRelics, type Ctx } from "./effects";
 import { BOSS_NODE, generateMap, pickEncounter, reachableNodes } from "./map";
-import { bossRelicChoices, combatRewards, makeShop, randomCardOf, rollRelic, rollRunbook } from "./rewards";
+import { bossRelicChoices, combatRewards, makeShop, randomCardOf, relicLeft, rollRelic, rollRunbook, shopPrice } from "./rewards";
 import { seedStreams, weightedPick } from "./rng";
 import type {
   Act,
@@ -13,6 +13,7 @@ import type {
   CommandResult,
   Content,
   EventDef,
+  EventOutcome,
   GameEvent,
   NewRunOptions,
   RunState,
@@ -111,10 +112,10 @@ function startAct(run: RunState, act: Act, content: Content, events: GameEvent[]
   run.screen = { kind: "map" };
 }
 
+/** An event for the act not seen yet this run, or undefined when none is left. */
 function pickEvent(run: RunState, content: Content): EventDef | undefined {
-  const inAct = Object.values(content.events).filter((e) => e.acts.includes(run.act));
-  const fresh = inAct.filter((e) => !run.seenEvents.includes(e.id));
-  const id = weightedPick(run.rng, "events", (fresh.length > 0 ? fresh : inAct).map((e) => [e.id, 1] as const));
+  const fresh = Object.values(content.events).filter((e) => e.acts.includes(run.act) && !run.seenEvents.includes(e.id));
+  const id = weightedPick(run.rng, "events", fresh.map((e) => [e.id, 1] as const));
   return id ? content.events[id] : undefined;
 }
 
@@ -158,13 +159,34 @@ function enterNode(run: RunState, nodeId: string, content: Content, events: Game
   }
 }
 
-/** Why an event choice can't be made now, or null if it can. A choice needing N budget needs more than N. */
+/** Why an outcome would do nothing now, or null if it takes effect. */
+function outcomeBlocked(run: RunState, outcome: EventOutcome, content: Content): string | null {
+  switch (outcome.op) {
+    case "chooseCard":
+      return eligibleForDeckChoice(run, outcome.action, content).length === 0 ? `No card to ${outcome.action}` : null;
+    case "relic":
+      return (outcome.relic && !run.relics.some((r) => r.id === outcome.relic)) || relicLeft(run, content) ? null : "No relic left";
+    case "runbook":
+      return run.runbooks.includes(null) ? null : "No free runbook slot";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Why an event choice can't be made now, or null if it can. A choice needing N budget needs more than N,
+ * and a choice with an outcome that would do nothing is blocked, so its cost is never paid for nothing.
+ */
 export function eventChoiceBlocked(run: RunState, index: number, content: Content): string | null {
   if (run.screen.kind !== "event" || run.screen.chosen !== null) return "No choice to make";
   const choice = content.events[run.screen.event]?.choices[index];
   if (!choice) return "No such choice";
   if (choice.requires?.cash !== undefined && run.cash < choice.requires.cash) return `Needs ${choice.requires.cash} cash`;
   if (choice.requires?.budget !== undefined && run.budget <= choice.requires.budget) return `Needs more than ${choice.requires.budget} Error Budget`;
+  for (const outcome of choice.outcomes) {
+    const blocked = outcomeBlocked(run, outcome, content);
+    if (blocked) return blocked;
+  }
   return null;
 }
 
@@ -258,15 +280,16 @@ export function deckChoiceCancellable(run: RunState): boolean {
   return run.screen.kind === "deckChoice" && (run.screen.then.kind === "retro" || run.screen.then.kind === "shop");
 }
 
-function cancelDeckChoice(run: RunState, events: GameEvent[]): string | null {
+function cancelDeckChoice(run: RunState, content: Content, events: GameEvent[]): string | null {
   if (run.screen.kind !== "deckChoice") return "Nothing to cancel";
   if (!deckChoiceCancellable(run)) return "This choice can't be cancelled";
   const then = run.screen.then;
   if (then.kind === "retro") then.done = false;
   if (then.kind === "shop") {
-    // A refund, not earnings: the stats don't count it.
-    run.cash += then.shop.removalPrice;
-    events.push({ type: "cash", amount: then.shop.removalPrice });
+    // A refund, not earnings: the stats don't count it. No discount can change while choosing, so it is the price paid.
+    const refund = shopPrice(run, content, then.shop.removalBasePrice);
+    run.cash += refund;
+    events.push({ type: "cash", amount: refund });
     run.removals -= 1;
     then.shop.removalUsed = false;
   }
@@ -322,7 +345,8 @@ function takeReward(run: RunState, index: number, card: number | undefined, cont
 function shopCommand(run: RunState, cmd: Command, content: Content, events: GameEvent[]): string | null {
   if (run.screen.kind !== "shop") return "Not in a shop";
   const shop = run.screen.shop;
-  const pay = (price: number) => {
+  const pay = (basePrice: number) => {
+    const price = shopPrice(run, content, basePrice);
     if (run.cash < price) return false;
     gainCash(run, -price, events);
     return true;
@@ -331,7 +355,7 @@ function shopCommand(run: RunState, cmd: Command, content: Content, events: Game
     case "buyCard": {
       const offer = shop.cards[cmd.index];
       if (!offer || offer.sold) return "Not for sale";
-      if (!pay(offer.price)) return "Not enough cash";
+      if (!pay(offer.basePrice)) return "Not enough cash";
       offer.sold = true;
       addToDeck(run, offer.card, events);
       return null;
@@ -339,7 +363,7 @@ function shopCommand(run: RunState, cmd: Command, content: Content, events: Game
     case "buyRelic": {
       const offer = shop.relics[cmd.index];
       if (!offer || offer.sold) return "Not for sale";
-      if (!pay(offer.price)) return "Not enough cash";
+      if (!pay(offer.basePrice)) return "Not enough cash";
       offer.sold = true;
       acquireRelic(run, offer.relic, content, events);
       return null;
@@ -348,7 +372,7 @@ function shopCommand(run: RunState, cmd: Command, content: Content, events: Game
       const offer = shop.runbooks[cmd.index];
       if (!offer || offer.sold) return "Not for sale";
       if (!run.runbooks.includes(null)) return "Runbook slots are full";
-      if (!pay(offer.price)) return "Not enough cash";
+      if (!pay(offer.basePrice)) return "Not enough cash";
       offer.sold = true;
       addRunbook(run, offer.runbook, events);
       return null;
@@ -356,8 +380,8 @@ function shopCommand(run: RunState, cmd: Command, content: Content, events: Game
     case "buyRemoval": {
       if (shop.removalUsed) return "Already used";
       if (run.deck.length === 0) return "No cards to remove";
-      if (!pay(shop.removalPrice)) return "Not enough cash";
-      // The shop keeps the price paid, so backing out can refund it; the next shop charges more.
+      if (!pay(shop.removalBasePrice)) return "Not enough cash";
+      // The shop keeps its removal price, so backing out can refund it; the next shop charges more.
       run.removals += 1;
       shop.removalUsed = true;
       openDeckChoice(run, "remove", content);
@@ -450,7 +474,7 @@ function dispatch(run: RunState, cmd: Command, content: Content, events: GameEve
     case "leave":
       return leave(run, content, events);
     case "cancel":
-      return cancelDeckChoice(run, events);
+      return cancelDeckChoice(run, content, events);
     case "abandon":
       endRun(run, "lost", events);
       return null;

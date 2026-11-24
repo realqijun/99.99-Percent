@@ -6,6 +6,7 @@ import { CONTENT } from "../content";
 import { cantPlayReason, cardCost } from "./combat";
 import { choiceCandidates } from "./effects";
 import { reachableNodes as reachable } from "./map";
+import { shopPrice as discountedPrice } from "./rewards";
 import { applyRunCommand, createRun, deckChoiceCancellable, eventChoiceBlocked, retroRecoverAmount as retroAmount, RUN_VERSION } from "./run";
 import { describeCard } from "./text";
 import type { CardDef, CardInstance, CombatState, CommandResult, Command, Content, NewRunOptions, RunState } from "./types";
@@ -58,7 +59,12 @@ export function canCancelDeckChoice(run: RunState): boolean {
   return deckChoiceCancellable(run);
 }
 
-/** Why an event choice can't be made now (not enough cash or Error Budget), or null if it can. */
+/** What a Vendor base price costs right now, after discounts. */
+export function shopPrice(run: RunState, basePrice: number, content: Content = CONTENT): number {
+  return discountedPrice(run, content, basePrice);
+}
+
+/** Why an event choice can't be made now (not enough cash or Error Budget, or it would do nothing), or null if it can. */
 export function cantChoose(run: RunState, index: number, content: Content = CONTENT): string | null {
   return eventChoiceBlocked(run, index, content);
 }

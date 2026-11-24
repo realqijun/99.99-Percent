@@ -222,6 +222,7 @@ You start the run with 99 cash.
 
 Shop relics cost 150.
 Each price varies by up to 5% either way, and discounts apply to everything, removal included.
+A discount bought at the Vendor applies to its other prices at once.
 Shop cards are 55% common, 35% uncommon and 10% rare.
 
 ### Retro and events
@@ -231,6 +232,7 @@ You can back out of a Refactor before picking the card, and the Retro is open ag
 A card an event asks you to pick can't be backed out of, since its cost is already paid.
 A choice that needs N Error Budget needs more than N, so paying it can't breach the SLA.
 A choice that needs N cash needs at least N.
+A choice that would do nothing can't be made, for example upgrading a card with none left to upgrade, or gaining a runbook with every slot full.
 
 ## Difficulty
 
