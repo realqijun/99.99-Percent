@@ -38,7 +38,7 @@ Every read is validated, and storage errors never stop play.
 | `n9999.profile` | Unlocked difficulties per character, the last 20 run results, whether the tutorial is done |
 | `n9999.settings` | Volumes, mute, animation speed, reduced motion |
 
-A saved run that fails validation is kept under `n9999.run.broken` and the title screen offers to export it.
+A saved run that fails validation is kept under `n9999.run.broken` and the title screen offers to export or discard it.
 
 ## The backend
 

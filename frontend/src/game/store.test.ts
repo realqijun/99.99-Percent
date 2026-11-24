@@ -215,6 +215,26 @@ describe("storage problems", () => {
     expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
   });
 
+  it("discards the broken save for good", () => {
+    localStorage.setItem(KEYS.broken, "{oops");
+    const store = createGameStore();
+    expect(store.getState().brokenSave).toBe(true);
+    store.getState().discardBrokenSave();
+    expect(store.getState().brokenSave).toBe(false);
+    expect(localStorage.getItem(KEYS.broken)).toBeNull();
+    expect(createGameStore().getState().brokenSave).toBe(false);
+  });
+
+  it("hides the broken-save notice even when storage can't remove it", () => {
+    localStorage.setItem(KEYS.broken, "{oops");
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+    const store = createGameStore();
+    store.getState().discardBrokenSave();
+    expect(store.getState().brokenSave).toBe(false);
+  });
+
   it("plays on when storage is blocked", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new DOMException("blocked", "SecurityError");

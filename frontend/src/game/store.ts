@@ -48,6 +48,8 @@ export interface GameState {
   updateSettings(patch: Partial<Settings>): void;
   dismissError(id: number): void;
   exportBrokenSave(): void;
+  /** Deletes the broken save and hides its notice, even when storage can't be written. */
+  discardBrokenSave(): void;
   /** Dev only: show a hand-made run without saving it. */
   loadFixture(run: RunState): void;
 }
@@ -235,6 +237,11 @@ export function createGameStore() {
         } catch (e) {
           fail(`Couldn't export the save: ${message(e)}`);
         }
+      },
+
+      discardBrokenSave() {
+        storage.clearBrokenSave();
+        set({ brokenSave: false });
       },
 
       loadFixture(run) {
