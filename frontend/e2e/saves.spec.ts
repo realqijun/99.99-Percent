@@ -1,5 +1,5 @@
 /* Losing a run, and play when storage is blocked or the save is broken. */
-import { engineRun, expect, hand, KEYS, openGame, play, readStorage, saved, test } from "./support";
+import { engineRun, expect, hand, KEYS, openGame, play, readStorage, reopenGame, saved, test } from "./support";
 
 test("losing all Error Budget ends the run with a summary, and the history lists it", async ({ page }) => {
   // The tutorial fight's Traffic Spike always attacks; with 1 Error Budget left its first hit ends the run.
@@ -50,7 +50,7 @@ test("the game starts and plays when storage is blocked", async ({ page }) => {
   await expect(game.getByText("Turn 2")).toBeVisible();
 });
 
-test("a corrupt saved run moves to the broken-save slot and can be exported", async ({ page }) => {
+test("a corrupt saved run moves to the broken-save slot, can be exported and can be discarded", async ({ page }) => {
   const corrupt = JSON.stringify({ version: 1, seed: "OOPS", screen: { kind: "nowhere" } });
   const game = await openGame(page, { storage: { [KEYS.run]: corrupt } });
 
@@ -70,4 +70,17 @@ test("a corrupt saved run moves to the broken-save slot and can be exported", as
   await game.getByRole("button", { name: "Start run" }).click();
   await expect(game.getByRole("heading", { name: "Act 1" })).toBeVisible();
   expect(await readStorage(page, KEYS.broken)).toBe(corrupt);
+
+  // The notice stays until the player discards the broken save, then never comes back.
+  let title = await reopenGame(page);
+  const notice = title.getByText("A saved run couldn't be loaded.");
+  await expect(notice).toBeVisible();
+  await title.getByRole("button", { name: "Discard" }).click();
+  await expect(notice).toHaveCount(0);
+  await expect(title.getByRole("button", { name: "Continue" })).toBeFocused();
+  expect(await readStorage(page, KEYS.broken)).toBeNull();
+
+  title = await reopenGame(page);
+  await expect(title.getByRole("button", { name: "Continue" })).toBeVisible();
+  await expect(title.getByText("A saved run couldn't be loaded.")).toHaveCount(0);
 });

@@ -1,5 +1,5 @@
 /* The first screen, and the new-run and history pages reached from it. */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { CharacterId, Difficulty } from "../../engine/types";
 import { useGame, type RunRecord } from "../../game/store";
 import { relicDef, useContent } from "../content";
@@ -18,10 +18,17 @@ export function Title() {
 function Menu({ onNewRun }: { onNewRun: () => void }) {
   const run = useGame((s) => s.run);
   const brokenSave = useGame((s) => s.brokenSave);
-  const { resume, abandon, clearFinished, exportBrokenSave } = useGame((s) => s);
+  const { resume, abandon, clearFinished, exportBrokenSave, discardBrokenSave } = useGame((s) => s);
   const historyCount = useGame((s) => s.profile.history.length);
   const [dialog, setDialog] = useState<"settings" | "history" | "replace" | null>(null);
+  const menu = useRef<HTMLElement>(null);
   const inProgress = Boolean(run && !run.result);
+
+  const discard = () => {
+    discardBrokenSave();
+    // The focused button goes away with the notice, so move focus to the menu.
+    menu.current?.querySelector("button")?.focus();
+  };
 
   const startNew = () => {
     if (inProgress) return setDialog("replace");
@@ -39,7 +46,7 @@ function Menu({ onNewRun }: { onNewRun: () => void }) {
       <div className="title-screen__center">
         <h1 className="logo">99.99 Percent</h1>
         <p className="tagline">Keep the servers up. Keep the users happy.</p>
-        <nav className="menu" aria-label="Main menu">
+        <nav className="menu" aria-label="Main menu" ref={menu}>
           {run && (
             <button type="button" className="btn btn--big" onClick={resume}>
               Continue
@@ -60,6 +67,9 @@ function Menu({ onNewRun }: { onNewRun: () => void }) {
             <p>A saved run couldn't be loaded.</p>
             <button type="button" className="btn btn--small btn--ghost" onClick={exportBrokenSave}>
               Export broken save
+            </button>
+            <button type="button" className="btn btn--small btn--ghost" onClick={discard}>
+              Discard
             </button>
           </div>
         )}
