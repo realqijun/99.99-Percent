@@ -434,6 +434,17 @@ describe("events", () => {
     expect(after.screen).toEqual({ kind: "event", event: "vendorDemo", chosen: null });
     expect(after.seenEvents).toContain("vendorDemo");
   });
+
+  it("makes an event node an Incident once every event for the act is seen", () => {
+    const run = fixtureRun();
+    const node = Object.values(run.map.nodes).find((n) => n.kind === "event" && n.floor > 1)!;
+    run.position = Object.values(run.map.nodes).find((n) => n.next.includes(node.id))!.id;
+    run.seenEvents = ["coffeeChat", "hackathon", "vendorDemo"];
+    const after = apply(run, { type: "chooseNode", node: node.id }).run;
+    expect(combat(after)).toMatchObject({ tier: "normal" });
+    expect(FIXTURE.encounters[combat(after).encounter]).toMatchObject({ act: 1, tier: "normal" });
+    expect(after.seenEvents).toEqual(run.seenEvents);
+  });
 });
 
 describe("treasure, bosses and acts", () => {

@@ -111,10 +111,10 @@ function startAct(run: RunState, act: Act, content: Content, events: GameEvent[]
   run.screen = { kind: "map" };
 }
 
+/** An event for the act not seen yet this run, or undefined when none is left. */
 function pickEvent(run: RunState, content: Content): EventDef | undefined {
-  const inAct = Object.values(content.events).filter((e) => e.acts.includes(run.act));
-  const fresh = inAct.filter((e) => !run.seenEvents.includes(e.id));
-  const id = weightedPick(run.rng, "events", (fresh.length > 0 ? fresh : inAct).map((e) => [e.id, 1] as const));
+  const fresh = Object.values(content.events).filter((e) => e.acts.includes(run.act) && !run.seenEvents.includes(e.id));
+  const id = weightedPick(run.rng, "events", fresh.map((e) => [e.id, 1] as const));
   return id ? content.events[id] : undefined;
 }
 
