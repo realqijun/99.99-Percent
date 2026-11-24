@@ -58,7 +58,7 @@ export function canCancelDeckChoice(run: RunState): boolean {
   return deckChoiceCancellable(run);
 }
 
-/** Why an event choice can't be made now (not enough cash or Error Budget), or null if it can. */
+/** Why an event choice can't be made now (not enough cash or Error Budget, or it would do nothing), or null if it can. */
 export function cantChoose(run: RunState, index: number, content: Content = CONTENT): string | null {
   return eventChoiceBlocked(run, index, content);
 }

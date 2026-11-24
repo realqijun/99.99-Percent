@@ -119,6 +119,22 @@ test("an event plays out its lines, takes a choice and shows the reply", async (
   await expect(game.getByRole("heading", { name: "Act 1" })).toBeVisible();
 });
 
+test("an event choice that would do nothing is blocked with the reason", async ({ page }) => {
+  const run = enter(engineRun({ seed: "EVENT" }), "event");
+  run.screen = { kind: "event", event: "ticketQueue", chosen: null };
+  for (const card of run.deck) card.upgraded = true;
+  const event = CONTENT.events.ticketQueue;
+  const game = await openGame(page, { storage: saved(run) });
+  await game.getByRole("button", { name: "Continue" }).click();
+
+  const talk = game.getByRole("region", { name: event.title });
+  for (let i = 1; i < event.lines.length; i++) await talk.getByRole("button", { name: "Next" }).click();
+  const fix = talk.getByRole("button", { name: startsWith("Fix the root cause") });
+  await expect(fix).toBeDisabled();
+  await expect(fix).toContainText("No card to upgrade");
+  await expect(talk.getByRole("button", { name: startsWith("Write a macro reply") })).toBeEnabled();
+});
+
 test("beating a boss offers boss relics, then the next act's map", async ({ page }) => {
   let run = engineRun({ seed: "BOSS" });
   run.position = Object.values(run.map.nodes).find((n) => n.floor === 15)!.id;

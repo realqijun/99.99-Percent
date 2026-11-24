@@ -231,6 +231,7 @@ You can back out of a Refactor before picking the card, and the Retro is open ag
 A card an event asks you to pick can't be backed out of, since its cost is already paid.
 A choice that needs N Error Budget needs more than N, so paying it can't breach the SLA.
 A choice that needs N cash needs at least N.
+A choice that would do nothing can't be made, for example upgrading a card with none left to upgrade, or gaining a runbook with every slot full.
 
 ## Difficulty
 

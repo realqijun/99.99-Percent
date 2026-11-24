@@ -87,6 +87,11 @@ export function rollRelic(run: RunState, content: Content, stream: StreamName, r
   return undefined;
 }
 
+/** Whether `rollRelic` can still find a relic. */
+export function relicLeft(run: RunState, content: Content): boolean {
+  return relicPool(run, content, RARITIES).length > 0;
+}
+
 export function bossRelicChoices(run: RunState, content: Content): string[] {
   return shuffled(run.rng, "rewards", relicPool(run, content, ["boss"]).map((r) => r.id)).slice(0, 3);
 }

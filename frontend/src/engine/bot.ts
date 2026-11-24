@@ -8,7 +8,7 @@
  * like infrastructure are worth their expected value over the turns left in the combat.
  */
 import { CONTENT } from "../content";
-import { cantPlay, costNow, reachableNodes, retroRecoverAmount } from "./index";
+import { cantChoose, cantPlay, costNow, reachableNodes, retroRecoverAmount } from "./index";
 import type {
   Amount,
   CardDef,
@@ -637,8 +637,7 @@ function eventCommand(run: RunState, content: Content): Command {
   let top = -1;
   let topValue = 0;
   choices.forEach((choice, index) => {
-    if (choice.requires?.cash !== undefined && run.cash < choice.requires.cash) return;
-    if (choice.requires?.budget !== undefined && run.budget <= choice.requires.budget) return;
+    if (cantChoose(run, index, content)) return;
     const value = choice.outcomes.reduce((sum, o) => sum + outcomeValue(o, run), 0);
     if (top < 0 || value > topValue) [top, topValue] = [index, value];
   });

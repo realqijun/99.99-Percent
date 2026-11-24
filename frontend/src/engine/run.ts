@@ -4,7 +4,7 @@
 import { activateRunbook, chooseInCombat, endTurn, playCard, settleCombat, startCombat, TUTORIAL_STEPS } from "./combat";
 import { fireRelics, type Ctx } from "./effects";
 import { BOSS_NODE, generateMap, pickEncounter, reachableNodes } from "./map";
-import { bossRelicChoices, combatRewards, makeShop, randomCardOf, rollRelic, rollRunbook } from "./rewards";
+import { bossRelicChoices, combatRewards, makeShop, randomCardOf, relicLeft, rollRelic, rollRunbook } from "./rewards";
 import { seedStreams, weightedPick } from "./rng";
 import type {
   Act,
@@ -13,6 +13,7 @@ import type {
   CommandResult,
   Content,
   EventDef,
+  EventOutcome,
   GameEvent,
   NewRunOptions,
   RunState,
@@ -158,13 +159,34 @@ function enterNode(run: RunState, nodeId: string, content: Content, events: Game
   }
 }
 
-/** Why an event choice can't be made now, or null if it can. A choice needing N budget needs more than N. */
+/** Why an outcome would do nothing now, or null if it takes effect. */
+function outcomeBlocked(run: RunState, outcome: EventOutcome, content: Content): string | null {
+  switch (outcome.op) {
+    case "chooseCard":
+      return eligibleForDeckChoice(run, outcome.action, content).length === 0 ? `No card to ${outcome.action}` : null;
+    case "relic":
+      return (outcome.relic && !run.relics.some((r) => r.id === outcome.relic)) || relicLeft(run, content) ? null : "No relic left";
+    case "runbook":
+      return run.runbooks.includes(null) ? null : "No free runbook slot";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Why an event choice can't be made now, or null if it can. A choice needing N budget needs more than N,
+ * and a choice with an outcome that would do nothing is blocked, so its cost is never paid for nothing.
+ */
 export function eventChoiceBlocked(run: RunState, index: number, content: Content): string | null {
   if (run.screen.kind !== "event" || run.screen.chosen !== null) return "No choice to make";
   const choice = content.events[run.screen.event]?.choices[index];
   if (!choice) return "No such choice";
   if (choice.requires?.cash !== undefined && run.cash < choice.requires.cash) return `Needs ${choice.requires.cash} cash`;
   if (choice.requires?.budget !== undefined && run.budget <= choice.requires.budget) return `Needs more than ${choice.requires.budget} Error Budget`;
+  for (const outcome of choice.outcomes) {
+    const blocked = outcomeBlocked(run, outcome, content);
+    if (blocked) return blocked;
+  }
   return null;
 }
 

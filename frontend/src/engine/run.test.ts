@@ -424,6 +424,28 @@ describe("events", () => {
     expect(apply(after, { type: "leave" }).run.screen).toEqual({ kind: "map" });
   });
 
+  it("blocks a choice that would do nothing, before its cost is paid", () => {
+    const upgraded = (r: RunState) => r.deck.forEach((c) => (c.upgraded = true));
+    const full = (r: RunState) => (r.runbooks = ["scaleUp", "scaleUp", "scaleUp"]);
+    const empty = (r: RunState) => (r.deck = []);
+    const allRelics = (r: RunState) => (r.relics = Object.keys(FIXTURE.relics).filter((id) => FIXTURE.relics[id].rarity !== "boss").map((id) => ({ id, counter: 0 })));
+    const cases: [RunState, number, string][] = [
+      [at("hackathon", upgraded), 2, "No card to upgrade"],
+      [at("hackathon", empty), 3, "No card to duplicate"],
+      [at("coffeeChat", empty), 2, "No card to remove"],
+      [at("vendorDemo", full), 0, "No free runbook slot"],
+      [at("vendorDemo", full), 1, "No free runbook slot"],
+      [at("hackathon", allRelics), 1, "No relic left"],
+    ];
+    for (const [run, index, reason] of cases) {
+      expect(cantChoose(run, index, FIXTURE)).toBe(reason);
+      expect(applyCommand(run, { type: "eventChoice", index }, FIXTURE)).toMatchObject({ run, error: reason });
+    }
+    // A full slot can be freed, and then the runbook can be taken.
+    const freed = apply(at("vendorDemo", full), { type: "discardRunbook", slot: 0 }).run;
+    expect(cantChoose(freed, 0, FIXTURE)).toBeNull();
+  });
+
   it("picks an unseen event for the act at an event node", () => {
     const run = fixtureRun();
     const node = Object.values(run.map.nodes).find((n) => n.kind === "event" && n.floor > 1)!;
