@@ -8,11 +8,11 @@ import { CardView } from "../CardView";
 import { cardDef, relicDef, runbookDef, useContent } from "../content";
 import { RelicTile, RunbookTile } from "../Tiles";
 
-/** The price, red when the item can't be bought now. */
+/** The price, dimmed when the item can't be bought now. */
 function Price({ price, blocked, sold }: { price: number; blocked: boolean; sold: boolean }) {
   if (sold) return <span className="price is-sold">Sold</span>;
   return (
-    <span className={`price${blocked ? " is-short" : ""}`}>
+    <span className={`price${blocked ? " is-blocked" : ""}`}>
       <Icon name="cash" size={14} />
       {price}
     </span>
