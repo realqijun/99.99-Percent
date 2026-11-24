@@ -93,18 +93,19 @@ export function startCombat(run: RunState, encounterId: string, content: Content
   events.push({ type: "combatStart", encounter: encounterId });
   for (const id of encounter.enemies) if (content.enemies[id]) c.enemies.push(makeEnemy(ctx, id));
 
-  const deck = shuffled(run.rng, "shuffle", run.deck).map((card) => ({ ...card }));
-  const innate = (card: CardInstance) => {
-    const def = content.cards[card.id];
-    return def !== undefined && hasKeyword(cardStats(def, card.upgraded), "innate");
-  };
-  c.drawPile = [...deck.filter(innate), ...deck.filter((card) => !innate(card))];
-
+  c.drawPile = shuffled(run.rng, "shuffle", run.deck).map((card) => ({ ...card }));
   fireRelics(ctx, "combatStart");
   for (const relic of run.relics) {
     const drawback = content.relics[relic.id]?.drawback;
     if (drawback) resolveEffects(ctx, drawback, { kind: "relic", id: relic.id });
   }
+
+  // Innate cards go on top after combat-start effects, so cards those add can't push them out of the opening hand.
+  const innate = (card: CardInstance) => {
+    const def = content.cards[card.id];
+    return def !== undefined && hasKeyword(cardStats(def, card.upgraded), "innate");
+  };
+  c.drawPile = [...c.drawPile.filter(innate), ...c.drawPile.filter((card) => !innate(card))];
   startPlayerTurn(ctx);
 }
 

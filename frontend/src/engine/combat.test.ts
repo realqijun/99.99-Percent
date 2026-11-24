@@ -48,6 +48,16 @@ describe("combat start", () => {
     expect([...c.hand, ...c.drawPile].filter((h) => h.id === "configDrift")).toHaveLength(1);
   });
 
+  it("keeps Innate cards in the opening hand when drawbacks add cards to the draw pile", () => {
+    for (let i = 0; i < 20; i++) {
+      const run = inCombat("a1spike", (r) => {
+        r.deck = Array.from({ length: 12 }, (_, j) => ({ uid: 100 + j, id: j < 5 ? "harden" : "serve", upgraded: false }));
+        r.relics.push({ id: "extraHands", counter: 0 });
+      }, { character: "taylor", seed: `innate${i}` });
+      expect(combat(run).hand.map((h) => h.id), `seed innate${i}`).toEqual(Array(5).fill("harden"));
+    }
+  });
+
   it("scales enemy Load by difficulty and tier", () => {
     const load = (encounter: string, difficulty: 0 | 1 | 2 | 3) => combat(inCombat(encounter, () => {}, { difficulty, seed: "load" })).enemies[0].maxLoad;
     expect(load("a1boss", 3)).toBe(Math.round(80 * 1.2));
