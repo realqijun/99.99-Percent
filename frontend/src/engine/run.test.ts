@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, canCancelDeckChoice, cantChoose, newRun, reachableNodes, retroRecoverAmount, shopPrice } from "./index";
+import { applyCommand, canCancelDeckChoice, cantChoose, newRun, reachableNodes, retroRecoverAmount, shopPrice, validateRun } from "./index";
 import { BOSS_NODE, FLOORS } from "./map";
 import { cardChoices, combatRewards, makeShop } from "./rewards";
 import { rand } from "./rng";
@@ -482,6 +482,8 @@ describe("events", () => {
     expect(combat(after)).toMatchObject({ tier: "normal" });
     expect(FIXTURE.encounters[combat(after).encounter]).toMatchObject({ act: 1, tier: "normal" });
     expect(after.seenEvents).toEqual(run.seenEvents);
+    // The node stays an Event node, so the save still validates.
+    expect(validateRun(JSON.parse(JSON.stringify(after)), FIXTURE)).not.toBeNull();
   });
 });
 
