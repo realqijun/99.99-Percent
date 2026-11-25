@@ -4,7 +4,7 @@
 
 ## How to test
 
-<!-- Steps, or the Vercel preview link -->
+<!-- Steps to check it -->
 
 ## Checklist
 

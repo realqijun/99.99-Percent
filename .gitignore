@@ -1,6 +1,5 @@
 node_modules/
 dist/
-dist-perf/
 .env
 .env.local
 .env.*.local
@@ -8,13 +7,9 @@ dist-perf/
 .vercel/
 *.log
 .DS_Store
-# Blender source files live in Google Drive, not Git
-*.blend
-*.blend1
 coverage/
 playwright-report/
 test-results/
 blob-report/
-
-# Generated browser shard selection
-frontend/.cache/
+release/
+.claude/worktrees/

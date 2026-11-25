@@ -1,316 +1,265 @@
 # Gameplay rules
 
-This is the source of truth for how 99.99% plays: its two modes, the Guided Mode chapters, the simulation rules and the economy.
+99.99 Percent is a turn-based card game about keeping a startup's service online.
+This file is the source of truth for the rules.
 The code wins any disagreement; fix this file when it does.
-The 3D building and its controls are in [WORLD.md](WORLD.md), and screen layout is in [UI_DESIGN.md](UI_DESIGN.md).
+Card, enemy, relic, runbook and event lists live in `frontend/src/content/`.
 
-## Modes
+## A run
 
-The home screen offers two modes, each with its own save.
+Pick a character and a difficulty, then climb three acts.
+Each act is a 15-floor map followed by a boss.
+Beat the Act 3 boss to win the run (the IPO).
+If Error Budget reaches 0, the SLA is breached and the run is lost.
 
-| Mode | Internal name | Clock | Goal |
-| --- | --- | --- | --- |
-| Guided Mode | `campaign` | Continuous game seconds, settled every 60 seconds as an operating week | Learn infrastructure concepts through a walkthrough and five chapters |
-| Challenge Mode | `classic` | Weekly turns, 26 weeks | Reach 50,000 users before week 26 without going bankrupt, then optionally keep playing with no deadline |
-
-Challenge Mode is locked until all five Guided Mode chapters (Opening to Stay Online) are complete.
-The showcase booth address `/steps` is the one exception: it asks for a leaderboard name, then starts a fresh Challenge Mode company with the first-week walkthrough on that device, replacing any Challenge Mode save there (see [api.md](api.md#booth-leaderboard)).
-Once unlocked, a player can switch between modes without losing either save.
-
-## Guided Mode
-
-One company, with one run ID, cash balance, architecture, queue state, pending work, trace and report history, carries through every chapter.
-Starting a new company is a separate, confirmed reset.
-
-| # | Chapter | Internal stage | Learning question |
-| --- | --- | --- | --- |
-| 0 | Walkthrough | `getting-started` | How do I read the evidence, run the clock and preview a purchase? |
-| 1 | Opening | `opening-db` | Which dependency is constraining service? |
-| 2 | Scaling & Routing | `application-scaling` | Does installed capacity actually receive traffic? |
-| 3 | Data Strategy | `data-strategy` | How does workload change the value of a cache? |
-| 4 | Traffic Spikes & Autoscaling | `traffic-spikes` | Can delayed automation handle changing demand at an acceptable cost? |
-| 5 | Stay Online | `application-reliability` | Does failure detection leave enough surviving capacity? |
-
-Chapter status is derived from engine state in `frontend/src/game/campaignChapters.ts`.
-Every chapter transition is an explicit player action; reports, milestones and recognitions are acknowledged by the player, never automatically.
-
-### Clock and pausing
-
-One physical step is one game second of requests.
-Run starts the shared clock and Pause freezes it.
-The +1s and +5s buttons (and `N`) advance exactly that many seconds and stop early wherever running would.
-Speed changes real-time pacing, not the work modelled per step.
-
-The first incident pauses automatically.
-Pending recovery reviews, milestones, spike recognition, failed spike test debriefs and bankruptcy stop advancement.
-Opening the menu or hiding the browser tab pauses play; there is no offline catch-up.
-
-### Chapter 0: Guided infrastructure introduction
-
-New companies start Launch Week with four sequential inspections: Network, App Servers, Database, then Monitoring. The current component's popup must be opened and acknowledged (Got it, Close or Escape); exploring another component does not advance the current step. Complete Introduction becomes available only after all four acknowledgements.
-
-Simulation time is frozen throughout the introduction: no incidents, settlement, research purchases, capacity upgrades or financial targets are required. Inspecting is free. The normal component popups supply live readings, and Hint repeats the current explanation. The compact side panel shows X/4 components explored and the exact next action.
-
-Introduction inputs are part of the deterministic save log, including inspection acknowledgements. A reload resumes the same step. Complete Introduction records an explicit Opening handoff and reuses the existing Opening initializer: $20,000, one 1,000 requests/s application, a 600 ops/s database and the original 300 requests/s starting workload. The $15,000/400 ops/s tutorial profile is an isolated demonstration, not Chapter 1's business state. The run identity, input history and tutorial completion are retained; time remains zero. No Opening milestone, research reward or Scaling entry is granted by the tutorial. Opening still requires its existing proactive prevention or reactive incident-recovery pathway and explicit recognition before Chapter 2 Scaling & Routing. Chapters 3-5 retain their existing rules. Practice restores the parked original company on completion or Exit.
-
-Saves retain their original replay scenario and input prefix. New completion inputs identify the Opening destination, and subsequent saves replay the original tutorial before entering the existing Opening profile. Historical completion inputs without that destination retain their recorded direct-to-Scaling result; existing companies are not silently rewound or rebalanced. An unfinished older introduction can use the corrected completion button. Existing scripted Launch Week saves retain their original incident and score-card behavior. The chapter list always reserves 1 for Opening, 2 for Scaling & Routing and 3-5 for the remaining chapters, including historical saves. Classic Mode and save schema 8 are unchanged.
-
-
-### Chapter 1: Opening
-
-The company starts with $20,000, one 1,000 req/s application, one 600 ops/s database, 300 incoming req/s, 2,000 displayed users and four engineers.
-At step 4 demand rises to 800 req/s, so the database is overloaded while the application has headroom.
-Three overloaded steps open the first incident at step 6.
-
-Opening choices are free inspection, adding an app, upgrading the database and limiting traffic.
-An added app is installed but unrouted, so it neither adds database capacity nor shares traffic.
-A database upgrade activates after its delay.
-A traffic limit admits at most 500 req/s and rejects the rest.
-
-There are two ways to complete the Opening; both award the same `opening-stability` milestone, which the player acknowledges from the chapter completion menu (see Guidance).
-
-- **Recovery:** an actual incident, five consecutive qualifying recovery steps, the postmortem, then Continue company.
-- **Prevention:** after growth, with no Opening incident ever opened, the company serves the full 800 req/s without a traffic limit, with positive cash, empty queues, latency under 500 ms and errors under 1%.
-  The Application and Database must each be inspected after growth, then five consecutive new steps must meet every condition.
-  A failing step resets the streak; pausing, reading and reloading add no observations.
-  The player reviews the prevention outcome and presses Continue company.
-
-The panel lists three chapter requirements for the whole Opening: growth, the first growth handled and reviewed, and the milestone.
-Prevention is not explained or tracked in the panel.
-It only becomes possible after the growth, seconds before the incident is due, when its checks can rarely still be met, so listing them read as noise.
-A player who does prevent the incident still gets the prevention review and the same milestone.
-
-The prevention rules are in `frontend/src/sim/openingPrevention.ts`.
-
-### Chapter 2: Scaling & Routing
-
-Growth to 1,400 req/s is scheduled three steps after the company is ready: management phase, no active incident, empty queues and purchased database capacity of at least 2,000 ops/s.
-A separate confirmation lets the player accept the growth with current database capacity; it grants nothing and overload and bankruptcy stay possible.
-
-Responses are scaling an app to 1,600 req/s, or installing another app and configuring load-balanced routing.
-Deploying a load balancer does not change routing, and a new app receives no new work until routing includes it.
-Balanced routing splits integer demand equally across the selected apps in numeric order; it does not weight by capacity, so a mixed 1,600/1,000 pool can overload its smaller app.
-
-Continue to Data Strategy unlocks once growth has been consumed, queues are empty, no incident is active and every report is acknowledged.
-
-### Chapter 3: Data Strategy
-
-Entry deterministically picks a read-heavy (80% reads) or write-heavy (20% reads) profile from the saved RNG.
-Growth to 2,400 req/s is scheduled three steps after readiness.
-
-All reads are cache-eligible and writes always reach the database.
-A cache starts cold, uses its current hit rate for the step, then warms by 12 percentage points when eligible reads were processed.
-Its ceiling is 60%, or 75% after tuning.
-Cache hits succeed without database work; misses and writes reach the database.
-For example, 2,400 processed requests with a warm 60% cache produce 1,152 hits and 1,248 database operations when read-heavy, but only 288 hits and 2,112 operations when write-heavy.
-
-The other major response is the 3,000 ops/s database tier.
-Observe contrasting workload optionally switches the profile once after growth.
-
-### Chapter 4: Traffic Spikes & Autoscaling
-
-Entry requires consumed data growth, positive cash, stable management, empty queues and acknowledged reports, and grants one research point for the autoscaling technology.
-For entry at step `n`, demand rises to the spike peak during `[n+8, n+28)` and `[n+48, n+68)` and is 2,400 req/s otherwise.
-These are saved deadlines; pausing and reloading do not move them.
-
-The chapter is a graded test.
-The spike peak is 4,000 req/s for a read-heavy company and 3,400 req/s for a write-heavy one, the most the 3,000 ops/s database can serve with a warm cache.
-The first spike is practice and is not graded.
-The second spike, and every retry, passes when at least 95% of its incoming requests succeed.
-Rejected requests count as unserved, so a traffic limit cannot pass the test.
-When a test fails, the clock stops on a debrief showing the served share, the main cause (traffic limit, database, autoscaling delay, a small server in an evenly split pool, or too little server capacity) and what to change.
-The database is named whenever it overloaded in at least as many spike seconds as the servers, because more servers only send it more work; its advice lists only the cache, cache tuning or database upgrade the company can still buy.
-Server capacity that joined part-way through a spike is reported with the second it arrived.
-Another spike of the same size starts 20 game seconds after the failed one ended, and retries continue until one passes.
-A company that goes bankrupt on the second a spike ends is not graded or given another spike; the bankruptcy ends the run.
-Incidents opened before the chapter completes close after five stable seconds without a recorded response, because the spike tests judge the response instead.
-After completion, incidents need a recorded response again.
-
-Companies that entered Traffic Spikes before the graded test keep the original rules: two spikes of 4,000 req/s, completion after both, and incidents that need a recorded response.
-The difference is recorded in the entry input, so their saves replay unchanged.
-
-The optional controller needs the unlock, deployed load balancing, balanced routing to at least two apps, a free slot and cash.
-It watches routed processed work divided by routed capacity:
-
-- Above 80% for three observations, it requests one base app, which installs in three steps and joins routing one step later. When all four app slots are taken, it instead upgrades the busiest eligible controller-created base app to the larger tier.
-- Below 60% for six safe observations, it retires an eligible controller-created app, never leaving fewer than two.
-- At most four apps are installed, with a four-step cooldown after each join, upgrade or retirement.
-- New apps take the lowest free number, so a retirement never leaves a numbering gap; the controller's decisions, pending actions and completions are announced in the event log and as notifications.
-- For four game seconds after each decision, install, routing join, upgrade or retirement, a beam lights the affected server in the room and a note beside its label explains the move; the note never pauses the game and can be dismissed.
-
-Manually installed or vertically upgraded apps are never retired, and there are no refunds.
-After a passed test, five stable baseline steps complete the chapter, which the player then acknowledges.
-The completion dialog scores the passed spike's served share, the number of graded spikes taken, setup spending, the share of routed capacity idle outside the spikes from entry to completion, and the changes made by the player and by autoscaling.
-The score never affects completion.
-
-### Chapter 5: Stay Online
-
-The player explicitly starts a temporary app failure test.
-The target app fails eight steps later and restores itself after twenty failed steps, unless the free three-step manual restoration finishes first.
-Health Checks detect the failure on a later step, and a reserved spare is promoted after a delay; failover reroutes traffic but adds no capacity.
-Actual reports and five stable observations after restoration precede the explicit reliability acknowledgement.
-
-### Completing the campaign
-
-Stay Online is the last chapter.
-Its outcome ends on the completion menu with Stay in this chapter or Complete campaign.
-Complete campaign needs the acknowledged reliability outcome, normal 2,400 req/s traffic, positive cash, no incident, read reports, empty queues, finished queued changes, every server up and healthy requests.
-It ends the run as won, records the final scorecard, freezes the clock and keeps the company inspectable.
-A company that stays keeps operating, and Next in the chapter bar offers Complete campaign, disabled with its unmet requirements, until the company is ready.
-Before the final scorecard, the five colleagues celebrate once per run: Maya, Jordan, Sam, Taylor, then Alex each speak one line.
-Taylor's line counts the recorded incidents, and the last line shows uptime (when known) and incidents from the recorded scorecard.
-Skipping it at any line counts as seeing it; leaving it part way, for example by reloading, plays it again from the start.
-The scorecard ends on Inspect final company, Export or start a new company, and Continue to Challenge Mode, which saves the finished company and switches to Challenge Mode, now unlocked.
-When the company cannot be saved, Continue to Challenge Mode turns into “Switch and lose this company” with a warning that switching loses it, and switches only when pressed again.
-View run scorecard, in the final company's panel or the Menu, reopens the scorecard with the same three actions.
-
-The final scorecard separates settled and pending revenue, setup and operating costs, and salaries.
-It reports rejected demand separately from service errors, plus architecture, technologies, incident count, service-health uptime and the longest degraded span.
-Confirmed replay archives the old company and scorecard and starts a new run ID and seed.
-
-Grow the Company, a former sixth chapter of growth waves and promotions, was removed.
-A company saved after entering it had already completed Stay Online, so it loads with the campaign completed at the step it entered that chapter.
-Everything it did in that chapter is discarded without notice, however that chapter went, including bankruptcy.
-The entry is the first attempt that chapter accepted; a refused attempt, and the Stay Online play after it, are kept.
-When the completed company is first saved, the browser keeps the original save as a backup if storage has room; a full storage never stops the save.
-
-### Guidance
-
-Guidance never changes the rules; it reads the same state the engine uses.
-
-- The chapter bar shows the chapter, one state-derived goal and Next when a transition is available.
-- Every chapter (Launch Week or the Opening, Scaling & Routing, Data Strategy, Traffic Spikes, Stay Online) ends on one completion menu, with the clock paused: Stay in this chapter, or Continue into the next chapter, which after Stay Online is Complete campaign.
-  For Launch Week, the Opening, Traffic Spikes and Stay Online the menu is the chapter's own recognition, which either choice acknowledges; Scaling & Routing and Data Strategy announce it once per company.
-- Continue is disabled while the next chapter's entry gate is unmet, and the menu names every unmet requirement; Next in the chapter bar then offers the chapter, disabled with the same reasons, until the company is ready.
-  Stay Online needs normal 2,400 req/s traffic, positive cash, no incident, read reports, empty queues and healthy requests; Complete campaign also needs finished queued changes and every server up.
-- The menu asks to open with Continue focused when it is possible, and with Stay focused otherwise.
-- Escape, Close and a click outside the menu all mean Stay in this chapter: the recognition is acknowledged and the menu does not return for that company.
-- A company that stays after Launch Week or the Opening remains in that finished chapter: none of Scaling & Routing's controls or requirements appear until Next enters it.
-- An Opening the player stays in is remembered for that company in the browser's profile, so the next Play does not move it into Scaling & Routing; a company loaded without that record, such as an older save, an import or a cloud restore, still continues into Scaling & Routing on Play.
-- Chapter requirements list each gate the player acts on as met or unmet, without revealing future deadlines.
-  Gates every chapter implies stay in the engine but are not listed: no active incident, postmortems and reports read, the previous chapter finished, and positive cash, which a running company always has because zero cash ends it.
-  Rows another row already covers are not listed either: Traffic Spikes' stable baseline only counts at baseline traffic, and Stay Online's restored server implies its failure was observed.
-  Scaling & Routing lists database headroom, growth and empty queues; Data Strategy lists growth, empty queues and healthy requests; Traffic Spikes lists its test (or pulses), empty queues, healthy requests, stable baseline and the acknowledged response; Stay Online lists finished pending actions, empty queues, healthy requests, the started test, the restored server, stable service and the acknowledged outcome.
-- Each chapter keeps the same requirement rows for its whole length, so its count never changes mid-chapter; a row that stops applying, such as Scaling's database headroom after its growth wave, stays listed as met.
-- Hint is player-requested and points at an existing control; optional attention cues for Run and Next defer to required reviews and guides.
-- The Opening's first Run (its first game second) moves the view to the server floor's In gate, where requests enter.
-  The gate glows and says requests are about to climb until the growth arrives, then that they climbed, and the callout ends four seconds after the growth.
-  Only companies that came through the introduction get it; it is presentation only and never part of the save.
-- Each chapter opens with an optional Company Message from a colleague (Maya, Alex, Jordan, Sam, then Taylor) stating its mission.
-  A new company's introduction opens with Maya's welcome first, asking the player to check out the machines; Opening's message then skips her greeting.
-  The colleague speaks a few short lines in their own voice, which the player reads one at a time, and the last line carries the mission.
-  Dismissing it at any line counts as reading it.
-  Data Strategy's scene explains caching before its chapter guide points at Read Cache.
-  A hidden tab, blurred window or pointer lock only suspends the scene in place - it is not dismissed, and the stage cue queued behind it still follows in order.
-- A new diagnostic incident that keeps running shows one Pause invitation.
-- A decision that pauses a company the player can still run shows one Run invitation, which lasts until the clock restarts or another prompt owns attention.
-- Every report (incident postmortem, prevention review, chapter outcome, scorecard) uses four short sections and one collapsed View Technical Details disclosure.
-  Reports are built from recorded snapshots, trace and actual activations, never from later company state.
-
-## Simulation rules
-
-These rules are shared by every Guided Mode chapter and live in `frontend/src/sim/step.ts`.
-
-- Each app processes `min(previous backlog + new demand, capacity)` per step; the remainder queues up to 1,000 per app and the overflow fails.
-- The database applies the same rule with a 600-operation backlog limit at every capacity tier.
-- Database demand is app-processed work minus cache hits, so draining queues can push work downstream after it arrived.
-- Latency is `100 ms + 1,000 * (largest per-instance backlog / capacity + database backlog / capacity)`.
-- Service error rate is failed outcomes over successful plus failed outcomes; deliberate rejections are reported separately.
-- Demand strictly above a component's capacity for three consecutive steps opens an incident; with several components, app order then database picks the primary.
-- Recovery needs five consecutive observations with latency under 500 ms, errors under 1%, positive admissions and completed outcomes, plus a recorded response: an uncancelled capacity, routing, admission or restoration action engaged at or after the step the cause began (the fault's start for a failed application, the incident's opening otherwise).
-  An application failure's own restoration, natural or manual, counts as that response.
-  Otherwise waiting for the problem to pass on its own never closes the incident, and buying, deploying or waiting is not recovery.
-  Saves written before the response requirement keep their original self-resolving incidents.
-- Bankruptcy is checked after settlement and takes precedence over recovery in that step.
-
-## Economy
-
-Purchases deduct cash immediately and must leave a positive balance; running costs start when equipment activates.
-Only one infrastructure deployment can be pending at a time.
-
-| Investment | Setup | Activation (steps) | Upkeep per 60-step week |
-| --- | ---: | ---: | ---: |
-| Additional base app | $1,000 | 2 manual / 3 automatic | $700 |
-| Scale an app to 1,600 req/s | $2,000 | 3 | $1,100 for that app |
-| Database 600 to 1,000 ops/s | $3,000 | 3 | $1,500 database total |
-| Database 1,000 to 2,000 ops/s | $3,000 | 3 | $2,500 database total |
-| Database 2,000 to 3,000 ops/s | $4,000 | 4 | $3,500 database total |
-| Load balancer | $1,000 | 2 | $300 |
-| Read cache | $1,500 | 2 | $400 |
-| Cache tuning | $1,000 | 2 | None |
-| Autoscaling controller | $1,000 | 2 | $100, including while disabled |
-| Traffic limit or removal | $0 | 1 | None |
-
-The starting database costs $500 per week and four engineers cost $1,600 each.
-Every 60 steps settles one operating week exactly once: each successful request earns $0.20, and accrued equipment and salary costs are charged, keeping partial cents.
-Pending revenue is not spendable before settlement.
-
-Traffic limiting always caps admission at 500 req/s.
-Rejected demand earns nothing; its opportunity value is shown but is not an extra charge.
-A limited company can be technically healthy and still lose money, for example $6,000 revenue against $8,600 costs per week at 500 req/s with one app and a 1,000 ops/s database.
-Bankruptcy ends the run, explains the settlement, keeps the evidence and offers a confirmed restart.
-
-## Technology tree
-
-Both modes use the same nine nodes in three branches.
-
-| Capacity | Data | Reliability |
+| Act | Name | Boss |
 | --- | --- | --- |
-| Scale Up | Larger Database | Health Checks |
-| Scale Out + Load Balancing | Read Cache | Spare Application Instance |
-| Autoscaling | Cache Tuning | Automatic Failover |
+| 1 | Seed Stage | Launch Day |
+| 2 | Series A | Black Friday |
+| 3 | Hypergrowth | Region Outage |
 
-Scale Up and Scale Out are independent, and Autoscaling requires load balancing.
-Larger Database uses the repeatable database upgrade and is independent of Read Cache.
-Cache Tuning requires a deployed Read Cache.
-Automatic Failover requires Health Checks, a spare instance and load balancing, and it promotes a spare without adding total capacity.
-Metrics, forecasts and alerts are always available.
+Beating a boss restores Error Budget to full, then offers a choice of 3 boss relics.
 
-In Guided Mode, chapters grant research points and the owned database tier implies Larger Database.
-In Challenge Mode, research costs cash and engineer-weeks and built upgrades ship through the release flow.
+## Characters
 
-## Challenge Mode
+| Character | Role | Error Budget | Starter relic | Plays around |
+| --- | --- | --- | --- | --- |
+| Jordan | Platform Engineer | 72 | Monitoring: draw 1 more card on turn 1, and see enemy intents 2 turns ahead | App Servers, Load Balancers, Autoscaling |
+| Taylor | Site Reliability Engineer | 70 | Postmortem Culture: recover 3 Error Budget after each combat | Health Checks, Failover, Pager control, recovery |
 
-Challenge Mode is the migrated prototype ([prototype-migration.md](prototype-migration.md)): weekly turns, engineers assigned to work, deploy-now versus test-first releases and four incident families with a timed crisis clock, evidence gathering, recovery actions, hints and postmortems.
+Each character has their own card pool and also draws from the neutral pool.
+Caching and database cards are neutral, so both characters use them.
 
-- Read Cache warms over two weekly turns; Cache Tuning raises the maximum database load reduction from 36% to 50% and warms a cold cache in one turn.
-- The workload assumes 60% of database demand is cache-eligible, and writes are never cached.
-- Promotions need no research: Social push from the start, Launch campaign at 5,000 users and Targeted campaign at 10,000 users.
-- Legacy definitions from the 17-node prototype tree remain only so old saves resume; removed research cannot be started again, and progress counts only the nine nodes.
-- Reaching 50,000 users secures the Series A and ends the run on its report, which offers Keep playing.
-  Choosing it carries the same company on with no deadline and no second win: growth, incidents, surges and costs continue, and only bankruptcy ends it.
-  The save records the week the Series A was secured, and the final report keeps the credit for it, so a later bankruptcy is not scored as a run that never won.
-  A won run that has not chosen yet reopens on its report from the home screen.
-  Playing on, the Users goal climbs through milestones of 100,000, 1,000,000, 10,000,000 and 100,000,000 users, after which there is no goal.
-  The goal is the first milestone above the company's peak users, so a milestone once reached stays reached when users dip.
-  The milestones are presentation only: they change no rule or score and are not saved.
+Starter decks have 10 cards:
+- Jordan: 5 Serve, 4 Provision, 1 Inspect.
+- Taylor: 5 Serve, 4 Provision, 1 Triage.
 
-### App profiles
+## Combat
 
-A new Challenge Mode company says what it builds: Social media, Online game, Online store or Music streaming (`frontend/src/sim/appProfiles.ts`).
-The cards appear right after the first-week tutorial, at the start of week 2, or in week 1 for a player who has done or skipped the tutorial.
-Weeks do not advance while the choice is waiting, and the engine accepts it only once and only up to week 2.
-Until then, and in runs saved before profiles existed, the company plays the original balance as a General app.
+At the start of combat, the deck is shuffled into the draw pile.
 
-Each profile scales the same equipment's workload and market against that original balance:
+Each player turn:
+1. Capacity resets to 0, unless you have Reserved.
+2. Backlog, then infrastructure, resolve.
+3. You get 3 Engineers. Unspent Engineers are lost at the end of the turn.
+4. Start-of-turn relics resolve.
+5. You draw 5 cards. When the draw pile is empty, the discard pile is shuffled to form a new one.
+6. You play cards. Each card costs Engineers.
+7. You end the turn. End-of-turn relics and card effects resolve, then your hand is discarded, except cards with Retain.
 
-| Profile | Traffic per user | Database work per request | Cacheable reads | Revenue per user | Users notice lag from | Promotions |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| General | 1.0x | 1.0x | 60% | 1.0x | 70% load | As listed |
-| Social media | 1.0x | 1.15x | 70% | 0.9x | 70% load | Social push 1.6x users and 1.2x spike, Launch 1.2x users, Targeted 0.8x users |
-| Online game | 1.25x | 0.7x | 70% | 1.05x | 50% load | Launch 1.4x users and 1.3x spike, Targeted 0.9x users |
-| Online store | 0.85x | 1.35x | 35% | 1.25x | 70% load | Targeted 1.5x users and 1.3x spike, Launch 1.1x users and 1.4x spike, Social push 0.7x users |
-| Music streaming | 1.15x | 1.0x | 85% | 1.0x | 80% load | Social push 1.25x users |
+Then each enemy acts on its intent, in order, and picks its next intent.
 
-The read cache still removes at most 36% of database work (50% tuned), so a profile's cacheable share only matters below that.
-The lag column is the peak load at which the weekly satisfaction penalty starts; it reaches its maximum at full load as before.
-Promotion prices are unchanged, so a profile's favourite promotion buys more users per dollar.
-The top bar keeps the choice in the place Guided Mode keeps Hint (on phones, among the numbers behind Users and revenue), and its card lists what the profile changes.
+- You can hold up to 10 cards. Draws past that are skipped, and cards added to a full hand go to the discard pile instead.
+- A played card stays in your hand until its effects finish, so it can't pick itself in a choice. Then it goes to the discard pile.
+- Power cards are removed for the rest of the combat once played.
+- X cost cards spend all your Engineers and resolve their effects once per Engineer spent. With 0 Engineers nothing happens.
+- Counts of cards played this turn don't include the card being played.
+- Enemy effects on allies reach the other living enemies, not the one using the move.
+- An enemy summoned during the enemies' turn first acts on the next one. There are never more than 5 enemies at once.
+- Relic drawbacks resolve at the start of each combat. Starting Capacity from relics is there on turn 1.
+
+### Intents
+
+Each enemy shows its intent: the move it will make next.
+An attack intent shows the requests each hit will send if you end the turn now, after every status, including statuses the enemies' turn adds before that enemy acts.
+Revealing N turns (Monitoring reveals 2) also shows each enemy's next N moves.
+Revealed moves are picked in advance and always happen.
+An enemy with phases picks its phase from its Load when it picks a move, and a new phase starts its moves from the beginning.
+
+- **Incoming requests** go to Capacity first. Whatever Capacity can't absorb burns Error Budget.
+- **Serve** reduces an enemy's Load. An enemy whose Load reaches 0 is resolved.
+- Combat is won when every enemy is resolved.
+- An enemy's **Buffer** absorbs Serve before its Load does, and resets when the enemies' turn starts, so Buffer gained during the enemies' turn lasts through your next turn.
+
+### Workload
+
+Every encounter is **read-heavy** or **write-heavy**, and the combat screen shows which.
+Writes bypass the cache, so Read Cache Capacity and Read Replica Serve are halved (rounded down) in write-heavy encounters.
+
+### Keywords
+
+| Keyword | Meaning |
+| --- | --- |
+| Decommission | Removed from the deck for the rest of the combat after it is played. |
+| Retain | Not discarded at the end of the turn. |
+| Volatile | Decommissioned if it is still in your hand at the end of the turn. |
+| Innate | Starts the combat in your opening hand. With more than 5, the opening draw takes them all, and relic draws still add to it, up to the hand limit of 10. |
+| Unplayable | Can't be played. |
+| Reject N | Gain N Capacity. Each Reject played cuts that combat's cash reward by 15% of what is left, because rejected traffic earns nothing. |
+
+### Statuses
+
+Statuses on you:
+
+| Status | Effect |
+| --- | --- |
+| Backlog N | At the start of your turn, lose N Error Budget, then Backlog drops by 1. |
+| Latency N | Your Serve does 25% less, for N turns. |
+| Degraded N | You take 50% more from incoming requests, for N turns. |
+| Optimized N | Each Serve hit does N more. |
+| Hardened N | Each card that gives Capacity (including Reject) gives N more. |
+| Reserved N | Capacity doesn't reset at the start of your next N turns. |
+
+Statuses on enemies:
+
+| Status | Effect |
+| --- | --- |
+| Throttled N | The enemy sends 25% fewer requests, for N turns. |
+| Exposed N | The enemy takes 50% more Serve, for N turns. |
+| Scaling N | Each of the enemy's hits sends N more requests. |
+| Retries N | At the end of its turn, the enemy regains N Load. |
+
+Backlog, Latency and Degraded are debuffs.
+Optimized, Hardened, Scaling and Retries last the whole combat.
+Latency and Reserved drop by 1 at the end of your turn, and Reserved keeps your Capacity at the next reset while it is above 0 then.
+Throttled and Exposed drop by 1 at the end of that enemy's turn.
+Degraded drops by 1 at the end of the enemies' turn, since that is when it matters.
+A status gained during an enemy turn doesn't drop at the end of that turn, so it still covers the next one.
+
+Serve is worked out as its number plus Optimized, then 25% less for Latency, then 50% more for the target's Exposed, rounding down at each step.
+Incoming hits are worked out as their number plus Scaling, then 25% less for Throttled, then 50% more for your Degraded, rounding down at each step.
+
+### Infrastructure
+
+Infrastructure cards install a piece of infrastructure that stays for the whole combat.
+Playing the same infrastructure again adds a stack.
+At the start of your turn the pieces resolve in this order: Auto Remediation, Read Cache, App Servers, Autoscaler, CDN, Read Replica.
+
+| Infrastructure | Effect per turn start (unless noted) |
+| --- | --- |
+| Read Cache | Gain Capacity equal to its warmth times its stacks, then warmth rises by 1, up to 6. Warmth starts at 1. |
+| Cache Tuning | Raises the Read Cache warmth limit by 2 per stack. |
+| Load Balancer | Routes App Servers. Without it they do nothing. |
+| App Server | With a Load Balancer, gain 4 Capacity per stack. Without one, it is Unrouted and gives nothing. |
+| Autoscaler | Gain Capacity equal to the Error Budget you lost since the start of your previous turn, up to 6 per stack. |
+| CDN | Gain 2 Capacity per stack. |
+| Message Queue | When Capacity resets, keep up to 5 per stack of what the enemies didn't use. |
+| Read Replica | Serve a random enemy for 3 per stack (cache halving applies). |
+| Health Checks | Node Failures you suffer last 1 turn instead of 2. |
+| Failover | Ignores the next Node Failure, once per stack. Each failure it stops uses up a stack. |
+| Circuit Breaker | Each time an enemy's hit burns your Error Budget, it gets Throttled 1 per stack as its turn ends, so it lasts through its next turn. |
+| Auto Remediation | Remove 1 stack of your largest debuff, per stack. |
+| On-Call Rotation | Whenever you draw a Pager, draw 1 card and gain 3 Capacity, per stack. |
+
+**Node Failure** is an enemy move that disables one of your working infrastructure pieces, chosen at random, for your next 2 turns.
+A disabled piece does nothing, and it keeps its stacks and warmth.
+
+### Status cards
+
+| Card | Effect |
+| --- | --- |
+| Tech Debt | Unplayable. |
+| Pager | Unplayable. If it is still in your hand at the end of the turn, lose 2 Error Budget. |
+| Config Drift | Unplayable. Volatile. When you draw it, lose 1 Engineer. |
+
+## Between combats
+
+The map is a branching graph of 15 floors.
+You start on floor 1 and move one floor up at a time along a path.
+
+| Node | What happens |
+| --- | --- |
+| Incident | A normal combat. |
+| Major Incident | An elite combat. Not before floor 6. Drops a relic. |
+| Event | A short scene with a colleague, with choices. |
+| Vendor | The shop. |
+| Retro | Rest: recover 30% of max Error Budget, or Refactor (upgrade) one card. |
+| Treasure | A relic. Always on floor 9. |
+| Boss | After floor 15. Floor 15 is always a Retro. |
+
+Floor 1 is always an Incident.
+There is no Retro on floor 14, and no two Major Incidents, Vendors or Retros in a row on a path.
+
+### Map generation
+
+The map is a grid of 7 columns.
+Six paths start on floor 1, the first two in different columns.
+Each path climbs one floor at a time, moves at most one column left or right, and never crosses another path.
+Every floor 15 node leads to the boss.
+Nodes without a fixed kind are picked by weight: Incident 50, Event 22, Retro 12, Major Incident 10, Vendor 6, leaving out kinds the rules forbid there.
+The boss and each Incident or Major Incident encounter are picked by weight from the act's encounters when the map is made, so the path you take doesn't change them or the next act's map.
+An Event node holds an event for the act you haven't seen yet, if one is left; if the act has none, it is an Incident.
+
+### Rewards
+
+| Combat | Cash | Also |
+| --- | --- | --- |
+| Incident | 10-20 | A choice of 3 cards, 40% chance of a runbook |
+| Major Incident | 25-35 | A choice of 3 cards, a relic, 40% chance of a runbook |
+| Boss | 95-105 | A choice of 3 rare cards, then a choice of 3 boss relics |
+
+Card choices can be skipped.
+The chance of a rare card rises the longer you go without seeing one.
+
+- Cash is rolled in the range, cut by Reject, raised by relics and rounded to the nearest.
+- Offered cards come from your character's pool and the neutral pool, all different.
+- Incident cards are 60% common, 35% uncommon and 5% rare. Major Incident cards are 50% common, 40% uncommon and 10% rare.
+- Each combat whose cards had no rare raises the rare chance by 2 points, taken from common. A card offer with a rare in it resets this.
+- Runbook drops are 60% common, 30% uncommon and 10% rare. With every slot full, discard a runbook to take it.
+- Relics from Major Incidents, Treasure and events are 50% common, 33% uncommon and 17% rare, from your character's and neutral relics you don't own yet. When a rarity runs out, another one is used.
+- Boss relics are 3 different boss relics you don't own. You can skip them.
+- Beating the Act 3 boss wins the run at once.
+
+### Cards, relics and runbooks
+
+- Upgraded cards show a `+` after their name. A card can be upgraded once.
+- Relics (tech) last for the whole run.
+- Runbooks are single-use and can be used in combat. You can hold 3.
+
+### Vendor
+
+The shop sells 5 cards from your pool, 2 neutral cards, 3 relics and 3 runbooks.
+Removing a card costs 75 cash, and 25 more each time you do it.
+You can remove one card per visit.
+You can back out of a removal before picking the card; the price is refunded and the removal doesn't count.
+You start the run with 99 cash.
+
+| Item | Common | Uncommon | Rare |
+| --- | --- | --- | --- |
+| Card | 50 | 75 | 150 |
+| Relic | 150 | 250 | 300 |
+| Runbook | 50 | 75 | 100 |
+
+Shop relics cost 150.
+Each price varies by up to 5% either way, and discounts apply to everything, removal included.
+A discount bought at the Vendor applies to its other prices at once.
+Shop cards are 55% common, 35% uncommon and 10% rare.
+
+### Retro and events
+
+A Retro rest recovers 30% of max Error Budget (20% at 99.999%), plus any relic bonus, rounded to the nearest.
+You can back out of a Refactor before picking the card, and the Retro is open again.
+With no card left to upgrade, Refactor can't be picked.
+A card an event asks you to pick can't be backed out of, since its cost is already paid.
+A choice that needs N Error Budget needs more than N, so paying it can't breach the SLA.
+A choice that needs N cash needs at least N.
+A choice that would do nothing can't be made, for example upgrading a card with none left to upgrade, or gaining a runbook with every slot full.
+When no choice can be made, the event can be left without one.
+
+## Difficulty
+
+Difficulty is measured in nines.
+Each level adds to the ones below it.
+
+| Level | Adds |
+| --- | --- |
+| 99% | Base rules |
+| 99.9% | Major Incidents have 25% more Load. |
+| 99.99% | Incidents have 10% more Load, and you start with a Tech Debt in your deck. |
+| 99.999% | Bosses have 15% more Load, and a Retro recovers 20% instead of 30%. |
+
+Extra Load applies to every enemy in that kind of encounter, summoned ones included, and is rounded to the nearest.
+Winning a run with a character unlocks the next level for that character.
+
+## Tutorial
+
+Your first run opens with a guided first combat: Maya points out the hand, an enemy's intent, Capacity and End Turn.
+It can be skipped, and it doesn't come back once it is finished or skipped.
+The steps are, in order: the hand, an enemy's intent, Capacity and End Turn.
+The tutorial never blocks play, and it uses the tutorial encounter when the content has one.
 
 ## Saves
 
-Both modes autosave on transitions, on a ten-second timer while in the foreground and on page lifecycle events.
-Resuming always starts paused and keeps pending deadlines, queues, progression, acknowledgements and measurement.
-Menu > Saves exports and imports JSON saves; an import is validated before it replaces a run and opens the matching mode.
-Corrupt or unsupported saves are kept and exportable, and a pre-update browser save can be exported or resumed into Challenge Mode.
-Guided Mode saves are a compact input log replayed through the engine; storage keys and schema versions are in [ARCHITECTURE.md](ARCHITECTURE.md#browser-storage).
+The run in progress is saved after every action, so closing the tab and coming back resumes at the same point.
+The browser also keeps unlocked difficulties, the last 20 run results, settings and whether the tutorial is done.
+Saves only live in this browser.
